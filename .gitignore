@@ -39,3 +39,9 @@ nohup.out
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# SQLite local database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
