@@ -1,0 +1,101 @@
+export const MAX_PAGE_SIZE = 100;
+export const DEFAULT_PAGE_SIZE = 30;
+export const MAX_AUDIT_LIMIT = 500;
+export const DEFAULT_AUDIT_LIMIT = 100;
+
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MONEY_RE = /^\d+(\.\d{1,2})?$/;
+
+export function isValidUUID(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+export function isValidMoneyAmount(value: number): boolean {
+  return Number.isFinite(value) && value >= 0 && MONEY_RE.test(String(value));
+}
+
+export type ErrorEnvelope = {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    messageEn: string;
+    details?: Record<string, unknown>;
+  };
+};
+
+export function validationError(
+  message: string,
+  messageEn: string,
+  code = 'VALIDATION_ERROR',
+  details?: Record<string, unknown>,
+): ErrorEnvelope {
+  return { success: false, error: { code, message, messageEn, ...(details ? { details } : {}) } };
+}
+
+export type ParsedPagination =
+  | { ok: true; page: number; limit: number; skip: number }
+  | { ok: false; error: ErrorEnvelope };
+
+export function parsePagination(query: { page?: string | number; limit?: string | number }): ParsedPagination {
+  const hasPage = query.page !== undefined && query.page !== null && query.page !== '';
+  const hasLimit = query.limit !== undefined && query.limit !== null && query.limit !== '';
+  const rawPage = Number(query.page);
+  const rawLimit = Number(query.limit);
+
+  if (hasPage && (!Number.isInteger(rawPage) || rawPage < 1)) {
+    return { ok: false, error: validationError('معامل الصفحة غير صالح، يجب أن يكون رقماً صحيحاً موجباً.', 'The page parameter must be a positive integer.') };
+  }
+  if (hasLimit && (!Number.isInteger(rawLimit) || rawLimit < 1 || rawLimit > MAX_PAGE_SIZE)) {
+    return { ok: false, error: validationError(`حد النتائج يجب أن يكون رقماً صحيحاً بين 1 و ${MAX_PAGE_SIZE}.`, `The limit must be an integer between 1 and ${MAX_PAGE_SIZE}.`) };
+  }
+
+  const page = hasPage ? rawPage : 1;
+  const limit = hasLimit ? rawLimit : DEFAULT_PAGE_SIZE;
+  return { ok: true, page, limit, skip: (page - 1) * limit };
+}
+
+export type ParsedAuditPagination =
+  | { ok: true; page: number; limit: number; skip: number; from?: Date; to?: Date }
+  | { ok: false; error: ErrorEnvelope };
+
+export function parseAuditPagination(query: {
+  page?: string | number;
+  limit?: string | number;
+  from?: string;
+  to?: string;
+}): ParsedAuditPagination {
+  const hasPage = query.page !== undefined && query.page !== null && query.page !== '';
+  const hasLimit = query.limit !== undefined && query.limit !== null && query.limit !== '';
+  const rawPage = Number(query.page);
+  const rawLimit = Number(query.limit);
+
+  if (hasPage && (!Number.isInteger(rawPage) || rawPage < 1)) {
+    return { ok: false, error: validationError('معامل الصفحة غير صالح، يجب أن يكون رقماً صحيحاً موجباً.', 'The page parameter must be a positive integer.') };
+  }
+  if (hasLimit && (!Number.isInteger(rawLimit) || rawLimit < 1)) {
+    return { ok: false, error: validationError(`حد النتائج يجب أن يكون رقماً صحيحاً موجباً في حد أقصى ${MAX_AUDIT_LIMIT}.`, `The limit must be a positive integer up to ${MAX_AUDIT_LIMIT}.`) };
+  }
+
+  const page = hasPage ? rawPage : 1;
+  const limit = hasLimit ? Math.min(rawLimit, MAX_AUDIT_LIMIT) : DEFAULT_AUDIT_LIMIT;
+
+  let from: Date | undefined;
+  let to: Date | undefined;
+
+  if (query.from !== undefined && query.from !== '') {
+    const d = new Date(query.from);
+    if (Number.isNaN(d.getTime())) return { ok: false, error: validationError('تاريخ البداية (from) غير صحيح.', 'The start date (from) is invalid.') };
+    from = d;
+  }
+  if (query.to !== undefined && query.to !== '') {
+    const d = new Date(query.to);
+    if (Number.isNaN(d.getTime())) return { ok: false, error: validationError('تاريخ النهاية (to) غير صحيح.', 'The end date (to) is invalid.') };
+    to = d;
+  }
+  if (from && to && from > to) {
+    return { ok: false, error: validationError('يجب أن تكون النهاية بعد البداية.', 'The end date must be after the start date.') };
+  }
+
+  return { ok: true, page, limit, skip: (page - 1) * limit, from, to };
+}

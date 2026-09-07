@@ -1,0 +1,60 @@
+# Staging/verification stack: web service + PostgreSQL together.
+# Mirrors the production single-origin topology so you can verify the built app
+# (HTTPS health, migrations, WebSocket) against a disposable DB before a live deploy.
+#
+# Usage:
+#   docker compose -f docker-compose.staging.yml build
+#   docker compose -f docker-compose.staging.yml up -d
+#   # health: GET http://localhost:3000/api/health
+#   docker compose -f docker-compose.staging.yml down -v   # destroy DB volume
+#
+# NOTE: For an actual HTTPS public deploy point the host (e.g. Render/Railway/K8s)
+# at the edge. This stack is for local/CI staging verification of the production image.
+
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: edu-center-erp:latest
+    container_name: edu_center_web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://postgres:stagingpass@postgres:5432/edu_center_erp_staging?schema=public
+      JWT_SECRET: ${JWT_SECRET:-staging-replace-with-long-random-jwt-secret-0123456789abcdef}
+      COOKIE_SECRET: ${COOKIE_SECRET:-staging-replace-with-long-random-cookie-secret-0123456789abcd}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      DEFAULT_LOCALE: ${DEFAULT_LOCALE:-ar}
+    # Apply migrations then start the server (mirrors start:production)
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             node dist/server/server/server.js"
+    ports:
+      - "3000:3000"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: edu_center_staging_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: stagingpass
+      POSTGRES_DB: edu_center_erp_staging
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d edu_center_erp_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  staging_postgres_data:

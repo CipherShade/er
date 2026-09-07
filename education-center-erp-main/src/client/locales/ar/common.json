@@ -1,0 +1,123 @@
+{
+  "appName": "سنتر سيستم",
+  "appSubtitle": "نظام إدارة سناتر الدروس الخصوصية",
+  "navigation": {
+    "ariaLabel": "التنقل الرئيسي",
+    "menu": "القائمة",
+    "lobby": "الاستقبال السريع",
+    "sessions": "جدول الحصص",
+    "students": "سجل الطلاب",
+    "teachers": "المدرسين والنسب",
+    "rooms": "القاعات والفصول",
+    "shiftRegister": "خزينة الوردية",
+    "reconciliation": "مطابقة الأعداد",
+    "settlement": "تصفية المدرسين",
+    "reports": "التقارير المالية"
+  },
+  "status": {
+    "active": "نشط",
+    "scheduled": "مجدول",
+    "completed": "منتهي",
+    "open": "مفتوحة",
+    "closed": "مغلقة",
+    "inactive": "غير نشط"
+  },
+  "actions": {
+    "close": "إغلاق",
+    "dismiss": "إخفاء التنبيه",
+    "switchLanguage": "تغيير اللغة",
+    "checkIn": "تسجيل حضور ودفع",
+    "quickAddStudent": "إضافة طالب سريع",
+    "openShift": "فتح وردية جديدة",
+    "closeShift": "تقفيل الوردية",
+    "reconcile": "مطابقة الأعداد",
+    "settlePayout": "تصفية حساب المدرس",
+    "search": "بحث سريع بالاسم أو الهاتف...",
+    "confirm": "تأكيد",
+    "cancel": "إلغاء"
+  },
+  "currency": "ج.م",
+  "ui": { "loading": "جارٍ تحميل البيانات...", "retry": "إعادة المحاولة", "adminOnly": "هذه العملية متاحة لمدير النظام فقط.", "noResults": "لا توجد نتائج مطابقة.", "processing": "جارٍ تنفيذ العملية..." },
+  "paymentMethods": {
+    "cash": "كاش",
+    "vodafoneCash": "فودافون كاش",
+    "instapay": "إنستاباي"
+  },
+  "desk": {
+    "station": "مكتب {{number}}",
+    "location": "البوابة الرئيسية",
+    "connected": "متصل"
+  },
+  "alerts": {
+    "title": "كل الأنظمة تعمل بشكل طبيعي",
+    "message": "تم الاتصال بالخدمات الأساسية. يمكنك بدء تسجيل الحضور من مكتب الاستقبال."
+  },
+  "dashboard": {
+    "currentSection": "القسم الحالي",
+    "welcome": "اختر أحد الأقسام من القائمة الجانبية لإدارة عمليات السنتر."
+  },
+  "user": {
+    "initial": "س"
+  },
+  "auth": {
+    "title": "تسجيل الدخول",
+    "subtitle": "سجّل الدخول لإدارة عمليات السنتر",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "signIn": "دخول",
+    "signingIn": "جارٍ تسجيل الدخول...",
+    "loading": "جارٍ التحميل...",
+    "invalidCredentials": "بيانات الدخول غير صحيحة",
+    "serviceUnavailable": "تعذر الاتصال بالخدمة. تحقق من الاتصال ثم أعد المحاولة."
+  },
+  "management": {
+    "sectionLabel": "الإدارة الأساسية",
+    "add": "إضافة جديد",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ...",
+    "confirmDelete": "هل تريد حذف هذا السجل؟",
+    "loadError": "تعذر تحميل البيانات.",
+    "saveError": "تعذر حفظ البيانات.",
+    "deleteError": "تعذر حذف البيانات.", "deleteSuccess": "تم الحذف بنجاح.", "saveSuccess": "تم الحفظ بنجاح.", "emptyRooms": "لا توجد قاعات مضافة بعد.", "emptyTeachers": "لا يوجد مدرسون مضافون بعد.",
+    "rooms": { "title": "إدارة القاعات", "name": "اسم القاعة", "capacity": "السعة", "floor": "الطابق", "noFloor": "بدون طابق محدد" },
+    "teachers": { "title": "سجل المدرسين", "name": "اسم المدرس", "phone": "الهاتف", "subject": "المادة", "fee": "رسوم السنتر لكل طالب", "assistant": "مساعد المدرس", "assistantPhone": "هاتف المساعد" }
+  },
+  "scheduling": {
+    "sectionLabel": "الجدول والتخطيط",
+    "title": "جدول الحصص",
+    "add": "إضافة حصة",
+    "save": "حفظ الحصة",
+    "centerFee": "رسوم السنتر",
+    "empty": "لا توجد حصص مجدولة حالياً.",
+    "loadError": "تعذر تحميل جدول الحصص.",
+    "saveError": "تعذر حفظ الحصة.", "permission": "إضافة وتعديل الحصص متاحان للمدير فقط.",
+    "form": { "teacher": "المدرس", "room": "القاعة", "title": "عنوان الحصة", "stage": "المرحلة الدراسية", "start": "تبدأ في", "end": "تنتهي في", "price": "سعر الحصة", "fee": "رسوم السنتر لكل طالب" }
+  },
+  "students": {
+    "sectionLabel": "بيانات الطلاب",
+    "title": "سجل الطلاب",
+    "quickAdd": "إضافة طالب سريع",
+    "search": "ابحث بالاسم أو الهاتف أو كود الطالب...",
+    "empty": "لا يوجد طلاب مطابقون للبحث.",
+    "edit": "تعديل الطالب",
+    "delete": "حذف الطالب",
+    "save": "حفظ الطالب",
+    "confirmDelete": "هل تريد حذف هذا الطالب؟",
+    "loadError": "تعذر تحميل سجل الطلاب.",
+    "saveError": "تعذر حفظ بيانات الطالب.",
+    "deleteError": "تعذر حذف الطالب.", "saving": "جارٍ حفظ بيانات الطالب...",
+    "form": { "name": "اسم الطالب", "studentPhone": "هاتف الطالب", "guardianPhone": "هاتف ولي الأمر", "stage": "المرحلة الدراسية", "school": "نوع المدرسة" },
+    "school": { "general": "عام", "languages": "لغات", "azhar": "أزهري" },
+    "table": { "code": "الكود", "name": "الاسم", "phone": "الهاتف", "stage": "المرحلة", "school": "المدرسة", "actions": "إجراءات" }
+  },
+  "operations": {
+    "loadError": "تعذر تحميل البيانات.", "saveError": "تعذر حفظ العملية.", "chooseSession": "اختر حصة أولاً.", "checkInSuccess": "تم تسجيل الحضور والدفع بنجاح.", "checkInError": "تعذر تسجيل الحضور.", "permission": "لا تملك صلاحية تنفيذ هذه العملية.", "loading": "جارٍ تحميل شاشة العمليات...", "auditEmpty": "لا توجد عمليات مسجلة لهذه الوردية.",
+    "lobby": { "title": "الاستقبال السريع", "subtitle": "تسجيل الحضور والدفع", "empty": "لا توجد حصص نشطة أو قريبة.", "studentSearch": "بحث عن طالب", "searchPlaceholder": "اكتب الاسم أو الكود أو الهاتف...", "reference": "مرجع التحويل (اختياري)", "paymentMethod": "طريقة الدفع" },
+    "shift": { "title": "خزينة الوردية", "subtitle": "إدارة درج المكتب", "desk": "اسم المكتب", "openingCash": "الرصيد الافتتاحي", "actualCash": "الكاش الفعلي عند الإغلاق", "notes": "ملاحظات الإغلاق", "category": "نوع المصروف", "amount": "المبلغ", "description": "الوصف", "addExpense": "تسجيل المصروف", "expectedCashInDrawer": "الكاش المتوقع", "totalCashCollected": "الكاش المقبوض", "totalTeacherCashPayouts": "مستحقات المدرسين", "totalCashExpenses": "مصروفات الكاش", "opened": "تم فتح الوردية.", "closed": "تم إغلاق الوردية.", "expenseSaved": "تم تسجيل المصروف." },
+    "reconciliation": { "title": "مطابقة أعداد الحضور", "subtitle": "مراجعة الاستقبال مع مساعد المدرس", "session": "الحصة", "lobbyCount": "عدد الاستقبال", "assistantCount": "عدد مساعد المدرس", "headcount": "العدد المعتمد", "notes": "ملاحظات حل الفرق", "saved": "تم حفظ المطابقة." },
+    "settlement": { "title": "تصفية مستحقات المدرس", "subtitle": "صرف المستحقات وإغلاق الحصة", "session": "الحصة", "price": "سعر الحصة", "centerFee": "رسوم السنتر", "payment": "طريقة الصرف", "recipient": "اسم المستلم", "saved": "تمت التصفية بنجاح." },
+    "reports": { "title": "التقارير المالية", "subtitle": "ملخص اليوم وسجل الخزينة", "load": "تحميل التقرير", "totalAttendees": "إجمالي الحضور", "centerNetRevenue": "صافي إيراد السنتر", "teacherPayouts": "مستحقات المدرسين", "digitalCollections": "التحصيل الرقمي", "shiftId": "معرف الوردية", "loadAudit": "عرض سجل العمليات" }
+  }
+}

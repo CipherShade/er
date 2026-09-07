@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Center Staff Internal Accounts
+model User {
+  id                String          @id @default(uuid()) 
+  username          String          @unique 
+  email             String?         @unique 
+  passwordHash      String          @map("password_hash") 
+  fullName          String          @map("full_name") 
+  role              String          @default("RECEPTIONIST")
+  phoneNumber       String?         @map("phone_number") 
+  preferredLanguage String          @default("ar") @map("preferred_language") 
+  isActive          Boolean         @default(true) @map("is_active")
+  createdAt         DateTime        @default(now()) @map("created_at") 
+  updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at") 
+
+  shiftRegisters    ShiftRegister[]
+  attendances       Attendance[]
+  reconciliations   SessionReconciliation[]
+  settlements       SessionSettlement[]
+  expenses          Expense[]
+  sessionsCreated   Session[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+// 2. Classrooms & Lecture Halls
+model Room {
+  id        String    @id @default(uuid()) 
+  name      String    @unique 
+  capacity  Int
+  floor     String?   
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") 
+
+  sessions  Session[]
+
+  @@map("rooms")
+}
+
+// 3. Tutors / Instructors
+model Teacher {
+  id                String    @id @default(uuid()) 
+  fullName          String    @map("full_name") 
+  /// Normalized Arabic name for trigram search
+  searchName        String    @map("search_name") 
+  phoneNumber       String    @map("phone_number") 
+  subject           String    
+  defaultCenterFee  Decimal   @map("default_center_fee") 
+  assistantName     String?   @map("assistant_name") 
+  assistantPhone    String?   @map("assistant_phone") 
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at") 
+
+  sessions          Session[]
+
+  @@index([searchName])
+  @@map("teachers")
+}
+
+// 4. Student Master Directory
+model Student {
+  id            String      @id @default(uuid()) 
+  studentCode   String      @unique @map("student_code") 
+  fullName      String      @map("full_name") 
+  /// Normalized Arabic name (Alef unified, taa marbouta, diacritics stripped) for trigram search
+  searchName    String      @map("search_name") 
+  studentPhone  String?     @map("student_phone") 
+  guardianPhone String      @map("guardian_phone") 
+  academicStage String      @map("academic_stage") 
+  schoolType    String      @default("GENERAL") @map("school_type")
+  notes         String?     
+  createdAt     DateTime    @default(now()) @map("created_at") 
+  updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at") 
+
+  attendances   Attendance[]
+
+  @@index([searchName])
+  @@index([studentPhone])
+  @@index([guardianPhone])
+  @@map("students")
+}
+
+// 5. Scheduled Class Sessions
+model Session {
+  id                    String        @id @default(uuid()) 
+  teacherId             String        @map("teacher_id") 
+  roomId                String        @map("room_id") 
+  title                 String        
+  academicStage         String        @map("academic_stage") 
+  startTime             DateTime      @map("start_time") 
+  endTime               DateTime      @map("end_time") 
+  sessionPrice          Decimal       @map("session_price") 
+  centerFeePerStudent   Decimal       @map("center_fee_per_student") 
+  status                String        @default("SCHEDULED")
+  createdById           String        @map("created_by") 
+  createdAt             DateTime      @default(now()) @map("created_at") 
+
+  teacher               Teacher       @relation(fields: [teacherId], references: [id])
+  room                  Room          @relation(fields: [roomId], references: [id])
+  createdBy             User          @relation(fields: [createdById], references: [id])
+  
+  attendances           Attendance[]
+  reconciliation        SessionReconciliation?
+  settlement            SessionSettlement?
+
+  @@index([status, startTime, endTime])
+  @@index([teacherId])
+  @@index([roomId])
+  @@map("sessions")
+}
+
+// 6. Per-Desk Shift Cash Drawers
+model ShiftRegister {
+  id                  String        @id @default(uuid()) 
+  receptionistId      String        @map("receptionist_id") 
+  deskIdentifier      String        @map("desk_identifier") 
+  openedAt            DateTime      @default(now()) @map("opened_at") 
+  closedAt            DateTime?     @map("closed_at") 
+  openingCash         Decimal       @default(0.00) @map("opening_cash") 
+  actualCashCounted   Decimal?      @map("actual_cash_counted") 
+  expectedCash        Decimal?      @map("expected_cash") 
+  cashVariance        Decimal?      @map("cash_variance") 
+  status              String        @default("OPEN")
+  closingNotes        String?       @map("closing_notes") 
+
+  receptionist         User          @relation(fields: [receptionistId], references: [id])
+  attendances          Attendance[]
+  disbursedSettlements SessionSettlement[]
+  expenses             Expense[]
+  auditLogs            AuditLog[]
+
+  @@index([receptionistId, status])
+  @@map("shift_registers")
+}
+
+// 7. Door Check-In & Payment Records
+model Attendance {
+  id                String            @id @default(uuid()) 
+  sessionId         String            @map("session_id") 
+  studentId         String            @map("student_id") 
+  receptionistId    String            @map("receptionist_id") 
+  shiftRegisterId   String            @map("shift_register_id") 
+  checkInTime       DateTime          @default(now()) @map("check_in_time") 
+  amountPaid        Decimal           @map("amount_paid") 
+  changeOwed        Decimal           @default(0.00) @map("change_owed") 
+  paymentMethod     String          @map("payment_method")
+  paymentReference  String?           @map("payment_reference") 
+  status            String            @default("PAID")
+
+  session           Session           @relation(fields: [sessionId], references: [id])
+  student           Student           @relation(fields: [studentId], references: [id])
+  receptionist      User              @relation(fields: [receptionistId], references: [id])
+  shiftRegister     ShiftRegister     @relation(fields: [shiftRegisterId], references: [id])
+
+  // Strict Concurrency Guard: A student cannot be checked in twice for the same session across desks
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([shiftRegisterId, paymentMethod])
+  @@map("attendances")
+}
+
+// 8. In-Hall Headcount Reconciliation
+model SessionReconciliation {
+  id                  String      @id @default(uuid()) 
+  sessionId           String      @unique @map("session_id") 
+  lobbyCount          Int         @map("lobby_count")
+  assistantCount      Int         @map("assistant_count")
+  discrepancy         Int
+  reconciledHeadcount Int         @map("reconciled_headcount")
+  resolutionNotes     String?     @map("resolution_notes") 
+  reconciledById      String      @map("reconciled_by") 
+  reconciledAt        DateTime    @default(now()) @map("reconciled_at") 
+
+  session             Session     @relation(fields: [sessionId], references: [id])
+  reconciledBy        User        @relation(fields: [reconciledById], references: [id])
+  settlement          SessionSettlement?
+
+  @@index([sessionId])
+  @@map("session_reconciliations")
+}
+
+// 9. Session Financial Settlements (Teacher Payouts)
+model SessionSettlement {
+  id                    String            @id @default(uuid()) 
+  sessionId             String            @unique @map("session_id") 
+  reconciliationId      String            @unique @map("reconciliation_id") 
+  disbursedFromShiftId  String?           @map("disbursed_from_shift_id") 
+  reconciledHeadcount   Int               @map("reconciled_headcount")
+  sessionPrice          Decimal           @map("session_price") 
+  centerFeePerStudent   Decimal           @map("center_fee_per_student") 
+  totalRevenue          Decimal           @map("total_revenue") 
+  centerRevenue         Decimal           @map("center_revenue") 
+  teacherPayout         Decimal           @map("teacher_payout") 
+  payoutMethod          String            @default("CASH") @map("payout_method")
+  recipientName         String            @map("recipient_name") 
+status              String            @default("DISBURSED")
+  createdById           String            @map("created_by") 
+  settledAt             DateTime          @default(now()) @map("settled_at") 
+
+  session               Session           @relation(fields: [sessionId], references: [id])
+  reconciliation        SessionReconciliation @relation(fields: [reconciliationId], references: [id])
+  disbursedFromShift    ShiftRegister?    @relation(fields: [disbursedFromShiftId], references: [id])
+  createdBy             User              @relation(fields: [createdById], references: [id])
+
+  @@index([sessionId])
+  @@index([disbursedFromShiftId])
+  @@map("session_settlements")
+}
+
+// 10. Petty Cash & Desk Operating Expenses
+model Expense {
+  id                String        @id @default(uuid()) 
+  shiftRegisterId   String?       @map("shift_register_id") 
+  category          String        
+  amount            Decimal       
+  paymentMethod     String        @default("CASH") @map("payment_method")
+  description       String        
+  createdById       String        @map("created_by") 
+  createdAt         DateTime      @default(now()) @map("created_at") 
+
+  shiftRegister     ShiftRegister? @relation(fields: [shiftRegisterId], references: [id])
+  createdBy         User          @relation(fields: [createdById], references: [id])
+
+  @@index([shiftRegisterId])
+  @@map("expenses")
+}
+
+// 11. Operational Audit Trail
+model AuditLog {
+  id              String        @id @default(uuid()) 
+  shiftRegisterId String?       @map("shift_register_id") 
+  actorId         String        @map("actor_id") 
+  action          String        
+  entityType      String        @map("entity_type") 
+  entityId        String?       @map("entity_id") 
+  amount          Decimal?      
+  metadata        String?
+  createdAt       DateTime      @default(now()) @map("created_at") 
+
+  shiftRegister   ShiftRegister? @relation(fields: [shiftRegisterId], references: [id])
+  actor           User           @relation(fields: [actorId], references: [id])
+
+  @@index([shiftRegisterId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

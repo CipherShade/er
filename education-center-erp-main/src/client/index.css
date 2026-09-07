@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    direction: rtl;
+    font-family: 'Cairo', sans-serif;
+  }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    direction: rtl;
+    background-color: #0f172a;
+    color: #f8fafc;
+  }
+}
+
+@layer utilities {
+  .rtl-safe-start { inset-inline-start: 0; }
+  .rtl-safe-end { inset-inline-end: 0; }
+  .border-s { border-inline-start-width: 1px; }
+  .border-e { border-inline-end-width: 1px; }
+}
+
+/* Custom RTL Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
