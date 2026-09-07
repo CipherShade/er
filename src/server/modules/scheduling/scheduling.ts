@@ -74,15 +74,15 @@ export function buildOverlapWhere(body: SessionBody, id?: string) {
 }
 function scheduleConflict(reply: { code: (status: number) => { send: (body: unknown) => unknown } }, resource: string) { return reply.code(409).send(validation(`يوجد تعارض في موعد ${resource} خلال هذه الفترة.`, `${resource} is already booked during this time.`, 'SCHEDULE_CONFLICT')); }
 
-async function ensureAvailable(body: SessionBody, id?: string) {
+async function ensureAvailable(body: SessionBody, id?: string, db: Prisma.TransactionClient | typeof prisma = prisma) {
   const times = parseTimes(body);
   const inputError = validateSessionInput(body, times);
   if (inputError) return { error: inputError };
-  const [teacher, room] = await Promise.all([prisma.teacher.findUnique({ where: { id: body.teacherId } }), prisma.room.findUnique({ where: { id: body.roomId } })]);
+  const [teacher, room] = await Promise.all([db.teacher.findUnique({ where: { id: body.teacherId } }), db.room.findUnique({ where: { id: body.roomId } })]);
   if (!teacher || !teacher.isActive) return { error: validation('المدرس غير موجود أو غير نشط.', 'Teacher not found or inactive.') };
   if (!room || !room.isActive) return { error: validation('القاعة غير موجودة أو غير نشطة.', 'Room not found or inactive.') };
   const overlap = buildOverlapWhere(body, id);
-  const [roomConflict, teacherConflict] = await Promise.all([prisma.session.findFirst({ where: { roomId: body.roomId, ...overlap }, select: { id: true } }), prisma.session.findFirst({ where: { teacherId: body.teacherId, ...overlap }, select: { id: true } })]);
+  const [roomConflict, teacherConflict] = await Promise.all([db.session.findFirst({ where: { roomId: body.roomId, ...overlap }, select: { id: true } }), db.session.findFirst({ where: { teacherId: body.teacherId, ...overlap }, select: { id: true } })]);
   if (roomConflict) return { conflict: 'القاعة' };
   if (teacherConflict) return { conflict: 'المدرس' };
   return { times };
@@ -100,21 +100,51 @@ const schedulingRoutes: FastifyPluginAsync = async (app) => {
   app.post<{ Body: SessionBody }>('/sessions', { preHandler: [authenticate, requireRoles(Role.ADMIN)], schema: { body: sessionSchema } }, async (request, reply) => {
     const statusCheck = validateSessionStatusChange(SessionStatus.SCHEDULED, request.body.status);
     if (!statusCheck.ok) return reply.code(statusCheck.httpStatus).send(validation(statusCheck.message, statusCheck.messageEn, statusCheck.code));
-    const checked = await ensureAvailable(request.body); if (checked.error) return reply.code(400).send(checked.error); if (checked.conflict) return scheduleConflict(reply, checked.conflict);
-    const session = await prisma.session.create({ data: { teacherId: request.body.teacherId, roomId: request.body.roomId, title: request.body.title.trim(), academicStage: request.body.academicStage.trim(), startTime: checked.times!.start, endTime: checked.times!.end, sessionPrice: new Prisma.Decimal(request.body.sessionPrice), centerFeePerStudent: new Prisma.Decimal(request.body.centerFeePerStudent), status: request.body.status ?? SessionStatus.SCHEDULED, createdById: request.user.sub } });
-    return reply.code(201).send({ success: true, data: { session } });
+    const result = await prisma.$transaction(async (tx) => {
+      const checked = await ensureAvailable(request.body, undefined, tx);
+      if (checked.error) return { kind: 'error' as const, error: checked.error };
+      if (checked.conflict) return { kind: 'conflict' as const, conflict: checked.conflict };
+      const session = await tx.session.create({
+        data: {
+          teacherId: request.body.teacherId,
+          roomId: request.body.roomId,
+          title: request.body.title.trim(),
+          academicStage: request.body.academicStage.trim(),
+          startTime: checked.times!.start,
+          endTime: checked.times!.end,
+          sessionPrice: new Prisma.Decimal(request.body.sessionPrice),
+          centerFeePerStudent: new Prisma.Decimal(request.body.centerFeePerStudent),
+          status: request.body.status ?? SessionStatus.SCHEDULED,
+          createdById: request.user.sub,
+        },
+      });
+      return { kind: 'ok' as const, session };
+    });
+    if (result.kind === 'error') return reply.code(400).send(result.error);
+    if (result.kind === 'conflict') return scheduleConflict(reply, result.conflict);
+    return reply.code(201).send({ success: true, data: { session: result.session } });
   });
   app.patch<{ Params: SessionParams; Body: Partial<SessionBody> }>('/sessions/:id', { preHandler: [authenticate, requireRoles(Role.ADMIN)], schema: { body: { ...sessionSchema, required: [] } } }, async (request, reply) => {
     if (!isValidUUID(request.params.id)) return reply.code(400).send(validation('معرّف الحصة غير صالح.', 'The session id is invalid.'));
     const preStatusCheck = validateSessionStatusChange(SessionStatus.SCHEDULED, request.body.status);
     if (!preStatusCheck.ok) return reply.code(preStatusCheck.httpStatus).send(validation(preStatusCheck.message, preStatusCheck.messageEn, preStatusCheck.code));
-    const current = await prisma.session.findUnique({ where: { id: request.params.id } }); if (!current) return reply.code(404).send(validation('الحصة غير موجودة.', 'Session not found.'));
-    const statusCheck = validateSessionStatusChange(current.status, request.body.status);
-    if (!statusCheck.ok) return reply.code(statusCheck.httpStatus).send(validation(statusCheck.message, statusCheck.messageEn, statusCheck.code));
-    const body: SessionBody = { teacherId: request.body.teacherId ?? current.teacherId, roomId: request.body.roomId ?? current.roomId, title: request.body.title ?? current.title, academicStage: request.body.academicStage ?? current.academicStage, startTime: request.body.startTime ?? current.startTime.toISOString(), endTime: request.body.endTime ?? current.endTime.toISOString(), sessionPrice: request.body.sessionPrice ?? Number(current.sessionPrice), centerFeePerStudent: request.body.centerFeePerStudent ?? Number(current.centerFeePerStudent), status: (request.body.status ?? current.status) as SessionStatus };
-    const checked = await ensureAvailable(body, request.params.id); if (checked.error) return reply.code(400).send(checked.error); if (checked.conflict) return scheduleConflict(reply, checked.conflict);
-    const session = await prisma.session.update({ where: { id: request.params.id }, data: { teacherId: body.teacherId, roomId: body.roomId, title: body.title.trim(), academicStage: body.academicStage.trim(), startTime: checked.times!.start, endTime: checked.times!.end, sessionPrice: new Prisma.Decimal(body.sessionPrice), centerFeePerStudent: new Prisma.Decimal(body.centerFeePerStudent), status: body.status } });
-    return reply.send({ success: true, data: { session } });
+    const result = await prisma.$transaction(async (tx) => {
+      const current = await tx.session.findUnique({ where: { id: request.params.id } });
+      if (!current) return { kind: 'notFound' as const };
+      const statusCheck = validateSessionStatusChange(current.status, request.body.status);
+      if (!statusCheck.ok) return { kind: 'statusError' as const, check: statusCheck };
+      const body: SessionBody = { teacherId: request.body.teacherId ?? current.teacherId, roomId: request.body.roomId ?? current.roomId, title: request.body.title ?? current.title, academicStage: request.body.academicStage ?? current.academicStage, startTime: request.body.startTime ?? current.startTime.toISOString(), endTime: request.body.endTime ?? current.endTime.toISOString(), sessionPrice: request.body.sessionPrice ?? Number(current.sessionPrice), centerFeePerStudent: request.body.centerFeePerStudent ?? Number(current.centerFeePerStudent), status: (request.body.status ?? current.status) as SessionStatus };
+      const checked = await ensureAvailable(body, request.params.id, tx);
+      if (checked.error) return { kind: 'error' as const, error: checked.error };
+      if (checked.conflict) return { kind: 'conflict' as const, conflict: checked.conflict };
+      const session = await tx.session.update({ where: { id: request.params.id }, data: { teacherId: body.teacherId, roomId: body.roomId, title: body.title.trim(), academicStage: body.academicStage.trim(), startTime: checked.times!.start, endTime: checked.times!.end, sessionPrice: new Prisma.Decimal(body.sessionPrice), centerFeePerStudent: new Prisma.Decimal(body.centerFeePerStudent), status: body.status } });
+      return { kind: 'ok' as const, session };
+    });
+    if (result.kind === 'notFound') return reply.code(404).send(validation('الحصة غير موجودة.', 'Session not found.'));
+    if (result.kind === 'statusError') return reply.code(result.check.httpStatus).send(validation(result.check.message, result.check.messageEn, result.check.code));
+    if (result.kind === 'error') return reply.code(400).send(result.error);
+    if (result.kind === 'conflict') return scheduleConflict(reply, result.conflict);
+    return reply.send({ success: true, data: { session: result.session } });
   });
   app.delete<{ Params: SessionParams }>('/sessions/:id', { preHandler: [authenticate, requireRoles(Role.ADMIN)] }, async (request, reply) => { if (!isValidUUID(request.params.id)) return reply.code(400).send(validation('معرّف الحصة غير صالح.', 'The session id is invalid.')); const session = await prisma.session.findUnique({ where: { id: request.params.id }, select: { status: true } }); if (!session) return reply.code(404).send(validation('الحصة غير موجودة.', 'Session not found.')); if (session.status === SessionStatus.COMPLETED) return reply.code(409).send(validation('لا يمكن حذف حصة منتهية.', 'Completed sessions cannot be deleted.', 'SESSION_LOCKED')); await prisma.session.update({ where: { id: request.params.id }, data: { status: SessionStatus.CANCELLED } }); return reply.send({ success: true, data: null }); });
 };

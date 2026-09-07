@@ -52,7 +52,22 @@ const reportRoutes: FastifyPluginAsync = async (app) => {
     ]);
 
     const digital = (method: PaymentMethod) => number(attendanceTotals.find((row) => row.paymentMethod === method)?._sum.amountPaid);
-    return reply.send({ success: true, data: { date, ...calculateDailyReportTotals({ attendees: attendanceCount, centerRevenue: number(settlementTotals._sum.centerRevenue), teacherPayouts: number(settlementTotals._sum.teacherPayout), vodafoneCash: digital(PaymentMethod.VODAFONE_CASH), instapay: digital(PaymentMethod.INSTAPAY) }) } });
+    const isAdmin = request.user.role === Role.ADMIN;
+    const centerRevenue = isAdmin ? number(settlementTotals._sum.centerRevenue) : 0;
+    const teacherPayouts = isAdmin ? number(settlementTotals._sum.teacherPayout) : 0;
+    return reply.send({
+      success: true,
+      data: {
+        date,
+        ...calculateDailyReportTotals({
+          attendees: attendanceCount,
+          centerRevenue,
+          teacherPayouts,
+          vodafoneCash: digital(PaymentMethod.VODAFONE_CASH),
+          instapay: digital(PaymentMethod.INSTAPAY),
+        }),
+      },
+    });
   });
 
   app.get<{ Params: { shiftId: string }; Querystring: { page?: string; limit?: string; from?: string; to?: string } }>('/shifts/:shiftId/audit', { preHandler: [authenticate, requireRoles(Role.ADMIN, Role.RECEPTIONIST)] }, async (request, reply) => {

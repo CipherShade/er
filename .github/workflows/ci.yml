@@ -12,24 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ci_password
-          POSTGRES_DB: edu_center_erp_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d edu_center_erp_ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     env:
-      DATABASE_URL: postgresql://postgres:ci_password@localhost:5432/edu_center_erp_ci?schema=public
-      TEST_DATABASE_URL: postgresql://postgres:ci_password@localhost:5432/edu_center_erp_ci?schema=public
+      DATABASE_URL: "file:./dev.db"
+      NODE_ENV: test
+      JWT_SECRET: "ci-test-jwt-secret-string-at-least-32-chars-long"
+      COOKIE_SECRET: "ci-test-cookie-secret-string-at-least-32-chars"
 
     steps:
       - name: Checkout
@@ -50,12 +37,8 @@ jobs:
       - name: Prisma generate
         run: npm run db:generate
 
-      # Real verification that every migration applies cleanly to a fresh DB
-      - name: Apply migrations (prisma migrate deploy)
-        run: npm run db:migrate:deploy
-
-      - name: Confirm migration status
-        run: npm run db:migrate:status
+      - name: Schema push (prisma db push)
+        run: npm run db:push
 
       - name: Build production (client + server)
         run: npm run build:production
@@ -66,11 +49,7 @@ jobs:
       - name: Frontend tests
         run: npm run test:frontend
 
-      # DB-backed lifecycle suite. Run here so it can be observed, but do not
-      # block merges until its known assertions are reconciled against a live DB
-      # (see docs/progress.md Step 18 note on totalAttendees).
-      - name: DB-backed integration tests (informational)
-        continue-on-error: true
+      - name: DB-backed integration tests
         run: npm run test:db
 
   # Build the production Docker image so container regressions surface in CI.

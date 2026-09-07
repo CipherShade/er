@@ -5,16 +5,18 @@ export type NavigationItem = {
   id: string;
   labelKey: string;
   icon: LucideIcon;
+  adminOnly?: boolean;
 };
 
 export const navigationItems: NavigationItem[] = [
   { id: 'lobby', labelKey: 'navigation.lobby', icon: Users },
   { id: 'sessions', labelKey: 'navigation.sessions', icon: Calendar },
   { id: 'students', labelKey: 'navigation.students', icon: GraduationCap },
-  { id: 'teachers', labelKey: 'navigation.teachers', icon: BookOpen },
-  { id: 'rooms', labelKey: 'navigation.rooms', icon: Building2 },
+  { id: 'teachers', labelKey: 'navigation.teachers', icon: BookOpen, adminOnly: true },
+  { id: 'rooms', labelKey: 'navigation.rooms', icon: Building2, adminOnly: true },
   { id: 'shift', labelKey: 'navigation.shiftRegister', icon: Wallet },
   { id: 'reconciliation', labelKey: 'navigation.reconciliation', icon: ClipboardCheck },
   { id: 'settlement', labelKey: 'navigation.settlement', icon: Coins },
-  { id: 'reports', labelKey: 'navigation.reports', icon: BarChart3 },
+  { id: 'reports', labelKey: 'navigation.reports', icon: BarChart3, adminOnly: true },
 ];
+
