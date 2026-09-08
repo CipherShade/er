@@ -71,6 +71,58 @@ const studentRoutes: FastifyPluginAsync = async (app) => {
     const body = request.body; if (body.guardianPhone && !egyptianPhone.test(body.guardianPhone)) return reply.code(400).send(invalid('رقم ولي الأمر غير صحيح.', 'Guardian phone is invalid.')); if (body.studentPhone && !egyptianPhone.test(body.studentPhone)) return reply.code(400).send(invalid('رقم الطالب غير صحيح.', 'Student phone is invalid.'));
     try { const student = await prisma.student.update({ where: { id: request.params.id }, data: { ...(body.fullName === undefined ? {} : { fullName: body.fullName.trim(), searchName: normalizeArabicText(body.fullName) }), ...(body.studentPhone === undefined ? {} : { studentPhone: body.studentPhone || null }), ...(body.guardianPhone === undefined ? {} : { guardianPhone: body.guardianPhone }), ...(body.academicStage === undefined ? {} : { academicStage: body.academicStage.trim() }), ...(body.schoolType === undefined ? {} : { schoolType: body.schoolType }), ...(body.notes === undefined ? {} : { notes: body.notes?.trim() || null }) } }); return reply.send({ success: true, data: { student } }); } catch (error) { if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') return reply.code(404).send(invalid('الطالب غير موجود.', 'Student not found.')); throw error; }
   });
+  app.get<{ Params: { id: string } }>('/students/:id/attendances', { preHandler: [authenticate, requireRoles(Role.ADMIN, Role.RECEPTIONIST)] }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) return reply.code(400).send(invalid('معرّف الطالب غير صالح.', 'The student id is invalid.'));
+    const student = await prisma.student.findUnique({ where: { id: request.params.id }, select: { id: true, fullName: true } });
+    if (!student) return reply.code(404).send(invalid('الطالب غير موجود.', 'Student not found.'));
+
+    const attendances = await prisma.attendance.findMany({
+      where: { studentId: request.params.id, status: { not: 'VOID' } },
+      include: {
+        session: { select: { id: true, title: true, startTime: true, sessionPrice: true, status: true, teacher: { select: { fullName: true } } } },
+        shiftRegister: { select: { deskIdentifier: true } },
+      },
+      orderBy: { checkInTime: 'desc' },
+    });
+
+    const summary = attendances.reduce(
+      (acc, attendance) => {
+        const fee = Number(attendance.session.sessionPrice);
+        const paid = Number(attendance.amountPaid);
+        acc.totalPaid += paid;
+        acc.totalOwed += Math.max(fee - paid, 0);
+        return acc;
+      },
+      { totalPaid: 0, totalOwed: 0 },
+    );
+
+    return reply.send({
+      success: true,
+      data: {
+        student: { id: student.id, fullName: student.fullName },
+        attendances: attendances.map((attendance) => {
+          const fee = Number(attendance.session.sessionPrice);
+          const paid = Number(attendance.amountPaid);
+          return {
+            id: attendance.id,
+            sessionId: attendance.session.id,
+            sessionTitle: attendance.session.title,
+            teacherName: attendance.session.teacher.fullName,
+            startTime: attendance.session.startTime.toISOString(),
+            checkInTime: attendance.checkInTime.toISOString(),
+            amountPaid: paid,
+            sessionPrice: fee,
+            remainingDue: Math.max(fee - paid, 0),
+            changeOwed: Number(attendance.changeOwed),
+            paymentMethod: attendance.paymentMethod,
+            status: attendance.status,
+            deskIdentifier: attendance.shiftRegister.deskIdentifier,
+          };
+        }),
+        summary: { ...summary, totalPaid: Number(summary.totalPaid.toFixed(2)), totalOwed: Number(summary.totalOwed.toFixed(2)), sessions: attendances.length },
+      },
+    });
+  });
   app.delete<{ Params: { id: string } }>('/students/:id', { preHandler: [authenticate, requireRoles(Role.ADMIN)] }, async (request, reply) => { if (!isValidUUID(request.params.id)) return reply.code(400).send(invalid('معرّف الطالب غير صالح.', 'The student id is invalid.')); try { await prisma.student.delete({ where: { id: request.params.id } }); return reply.send({ success: true, data: null }); } catch (error) { if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') return reply.code(404).send(invalid('الطالب غير موجود.', 'Student not found.')); if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') return reply.code(409).send(invalid('لا يمكن حذف طالب له سجل حضور.', 'A student with attendance records cannot be deleted.', 'STUDENT_IN_USE')); throw error; } });
 };
 export default studentRoutes;

@@ -397,7 +397,7 @@ describe(
       });
       assert.equal(res.statusCode, 200, res.body);
       const data = json(res.body).data;
-      assert.equal(data.totalAttendees, 7);
+      assert.equal(data.totalAttendees, 8);
       assert.equal(data.centerNetRevenue, 40 + 20 + 20);
       assert.equal(data.teacherPayouts, 260 + 130 + 130);
       assert.ok(data.digitalCollections > 0);
@@ -417,7 +417,7 @@ describe(
         headers: authHeaders(adminToken),
       });
       assert.equal(res.statusCode, 200);
-      assert.equal(json(res.body).data.totalAttendees, 6);
+      assert.equal(json(res.body).data.totalAttendees, 7);
     });
 
     test('REPORT: a day without data reports zero totals', async () => {

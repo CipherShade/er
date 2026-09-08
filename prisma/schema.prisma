@@ -7,6 +7,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  RECEPTIONIST
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum PaymentMethod {
+  CASH
+  VODAFONE_CASH
+  INSTAPAY
+}
+
+enum AttendanceStatus {
+  PAID
+  PARTIAL
+  EXCUSED
+  VOID
+}
+
+enum SettlementStatus {
+  PENDING
+  DISBURSED
+}
+
+enum SchoolType {
+  GENERAL
+  LANGUAGES
+  AZHAR
+}
+
 // 1. Center Staff Internal Accounts
 model User {
   id                String          @id @default(uuid()) 
@@ -14,7 +55,7 @@ model User {
   email             String?         @unique 
   passwordHash      String          @map("password_hash") 
   fullName          String          @map("full_name") 
-  role              String          @default("RECEPTIONIST")
+  role              Role            @default(RECEPTIONIST)
   phoneNumber       String?         @map("phone_number") 
   preferredLanguage String          @default("ar") @map("preferred_language") 
   isActive          Boolean         @default(true) @map("is_active")
@@ -76,7 +117,7 @@ model Student {
   studentPhone  String?     @map("student_phone") 
   guardianPhone String      @map("guardian_phone") 
   academicStage String      @map("academic_stage") 
-  schoolType    String      @default("GENERAL") @map("school_type")
+  schoolType    SchoolType    @default(GENERAL) @map("school_type")
   notes         String?     
   createdAt     DateTime    @default(now()) @map("created_at") 
   updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at") 
@@ -100,7 +141,7 @@ model Session {
   endTime               DateTime      @map("end_time") 
   sessionPrice          Decimal       @map("session_price") 
   centerFeePerStudent   Decimal       @map("center_fee_per_student") 
-  status                String        @default("SCHEDULED")
+  status                SessionStatus   @default(SCHEDULED)
   createdById           String        @map("created_by") 
   createdAt             DateTime      @default(now()) @map("created_at") 
 
@@ -129,7 +170,7 @@ model ShiftRegister {
   actualCashCounted   Decimal?      @map("actual_cash_counted") 
   expectedCash        Decimal?      @map("expected_cash") 
   cashVariance        Decimal?      @map("cash_variance") 
-  status              String        @default("OPEN")
+  status              ShiftStatus     @default(OPEN)
   closingNotes        String?       @map("closing_notes") 
 
   receptionist         User          @relation(fields: [receptionistId], references: [id])
@@ -152,17 +193,19 @@ model Attendance {
   checkInTime       DateTime          @default(now()) @map("check_in_time") 
   amountPaid        Decimal           @map("amount_paid") 
   changeOwed        Decimal           @default(0.00) @map("change_owed") 
-  paymentMethod     String          @map("payment_method")
+  paymentMethod     PaymentMethod  @map("payment_method")
   paymentReference  String?           @map("payment_reference") 
-  status            String            @default("PAID")
+  status            AttendanceStatus @default(PAID)
 
   session           Session           @relation(fields: [sessionId], references: [id])
   student           Student           @relation(fields: [studentId], references: [id])
   receptionist      User              @relation(fields: [receptionistId], references: [id])
   shiftRegister     ShiftRegister     @relation(fields: [shiftRegisterId], references: [id])
 
-  // Strict Concurrency Guard: A student cannot be checked in twice for the same session across desks
-  @@unique([sessionId, studentId])
+  // Strict Concurrency Guard: A student cannot be checked in twice for the same session across desks.
+  // Physical constraint is a PARTIAL unique index on (session_id, student_id) WHERE status <> 'VOID'
+  // (see migrations 0001/0004), so voided check-ins can be corrected by re-checking the student in.
+  @@index([sessionId, studentId])
   @@index([sessionId])
   @@index([studentId])
   @@index([shiftRegisterId, paymentMethod])
@@ -201,9 +244,9 @@ model SessionSettlement {
   totalRevenue          Decimal           @map("total_revenue") 
   centerRevenue         Decimal           @map("center_revenue") 
   teacherPayout         Decimal           @map("teacher_payout") 
-  payoutMethod          String            @default("CASH") @map("payout_method")
+  payoutMethod          PaymentMethod     @default(CASH) @map("payout_method")
   recipientName         String            @map("recipient_name") 
-status              String            @default("DISBURSED")
+status              SettlementStatus  @default(DISBURSED)
   createdById           String            @map("created_by") 
   settledAt             DateTime          @default(now()) @map("settled_at") 
 
@@ -223,7 +266,7 @@ model Expense {
   shiftRegisterId   String?       @map("shift_register_id") 
   category          String        
   amount            Decimal       
-  paymentMethod     String        @default("CASH") @map("payment_method")
+  paymentMethod     PaymentMethod     @default(CASH) @map("payment_method")
   description       String        
   createdById       String        @map("created_by") 
   createdAt         DateTime      @default(now()) @map("created_at") 
@@ -244,7 +287,7 @@ model AuditLog {
   entityType      String        @map("entity_type") 
   entityId        String?       @map("entity_id") 
   amount          Decimal?      
-  metadata        String?
+  metadata        Json?
   createdAt       DateTime      @default(now()) @map("created_at") 
 
   shiftRegister   ShiftRegister? @relation(fields: [shiftRegisterId], references: [id])

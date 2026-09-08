@@ -12,7 +12,8 @@
     "shiftRegister": "خزينة الوردية",
     "reconciliation": "مطابقة الأعداد",
     "settlement": "تصفية المدرسين",
-    "reports": "التقارير المالية"
+    "reports": "التقارير المالية",
+    "users": "إدارة المستخدمين"
   },
   "status": {
     "active": "نشط",
@@ -20,7 +21,11 @@
     "completed": "منتهي",
     "open": "مفتوحة",
     "closed": "مغلقة",
-    "inactive": "غير نشط"
+    "inactive": "غير نشط",
+    "paid": "مدفوع",
+    "partial": "دفع جزئي",
+    "voided": "ملغي",
+    "cancelled": "ملغاة"
   },
   "actions": {
     "close": "إغلاق",
@@ -34,10 +39,12 @@
     "settlePayout": "تصفية حساب المدرس",
     "search": "بحث سريع بالاسم أو الهاتف...",
     "confirm": "تأكيد",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "logout": "تسجيل الخروج"
   },
   "currency": "ج.م",
-  "ui": { "loading": "جارٍ تحميل البيانات...", "retry": "إعادة المحاولة", "adminOnly": "هذه العملية متاحة لمدير النظام فقط.", "noResults": "لا توجد نتائج مطابقة.", "processing": "جارٍ تنفيذ العملية..." },
+  "ui": { "loading": "جارٍ تحميل البيانات...", "retry": "إعادة المحاولة", "adminOnly": "هذه العملية متاحة لمدير النظام فقط.", "noResults": "لا توجد نتائج مطابقة.", "processing": "جارٍ تنفيذ العملية...", "fatal": "حدث خطأ غير متوقع أثناء عرض الصفحة.", "fatalDetail": "أعد تحميل الصفحة للمتابعة." },
+  "pagination": { "prev": "السابق", "next": "التالي" },
   "paymentMethods": {
     "cash": "كاش",
     "vodafoneCash": "فودافون كاش",
@@ -46,11 +53,14 @@
   "desk": {
     "station": "مكتب {{number}}",
     "location": "البوابة الرئيسية",
-    "connected": "متصل"
+    "connected": "متصل",
+    "noActiveShift": "لا توجد وردية مفتوحة على هذا المكتب"
   },
   "alerts": {
     "title": "كل الأنظمة تعمل بشكل طبيعي",
-    "message": "تم الاتصال بالخدمات الأساسية. يمكنك بدء تسجيل الحضور من مكتب الاستقبال."
+    "message": "تم الاتصال بالخدمات الأساسية. يمكنك بدء تسجيل الحضور من مكتب الاستقبال.",
+    "unavailable": "قاعدة البيانات غير متاحة حالياً.",
+    "unavailableMessage": "تعذر الاتصال بالخدمات الأساسية. أعد المحاولة خلال لحظات."
   },
   "dashboard": {
     "currentSection": "القسم الحالي",
@@ -77,6 +87,7 @@
     "delete": "حذف",
     "save": "حفظ",
     "saving": "جارٍ الحفظ...",
+    "actions": "إجراءات",
     "confirmDelete": "هل تريد حذف هذا السجل؟",
     "loadError": "تعذر تحميل البيانات.",
     "saveError": "تعذر حفظ البيانات.",
@@ -93,6 +104,12 @@
     "empty": "لا توجد حصص مجدولة حالياً.",
     "loadError": "تعذر تحميل جدول الحصص.",
     "saveError": "تعذر حفظ الحصة.", "permission": "إضافة وتعديل الحصص متاحان للمدير فقط.",
+    "edit": "تعديل الحصة",
+    "cancel": "إلغاء الحصة",
+    "cancelConfirm": "هل تريد إلغاء هذه الحصة؟",
+    "cancelled": "تم إلغاء الحصة.",
+    "saved": "تم حفظ الحصة.",
+    "uneditable": "لا يمكن تعديل حصة منتهية أو مقفلة.",
     "form": { "teacher": "المدرس", "room": "القاعة", "title": "عنوان الحصة", "stage": "المرحلة الدراسية", "start": "تبدأ في", "end": "تنتهي في", "price": "سعر الحصة", "fee": "رسوم السنتر لكل طالب" }
   },
   "students": {
@@ -108,16 +125,103 @@
     "loadError": "تعذر تحميل سجل الطلاب.",
     "saveError": "تعذر حفظ بيانات الطالب.",
     "deleteError": "تعذر حذف الطالب.", "saving": "جارٍ حفظ بيانات الطالب...",
-    "form": { "name": "اسم الطالب", "studentPhone": "هاتف الطالب", "guardianPhone": "هاتف ولي الأمر", "stage": "المرحلة الدراسية", "school": "نوع المدرسة" },
+    "form": { "name": "اسم الطالب", "studentPhone": "هاتف الطالب", "guardianPhone": "هاتف ولي الأمر", "stage": "المرحلة الدراسية", "school": "نوع المدرسة", "notes": "ملاحظات" },
+    "history": "سجل الحضور والمدفوعات",
+    "historyEmpty": "لا توجد جلسات حضور مسجلة لهذا الطالب.",
+    "phoneError": "رقم الهاتف يجب أن يكون رقم محمول مصري (010/011/012/015) بعشرة أرقام.",
+    "summaryTitle": "ملخص مدفوعات الطالب",
+    "totalPaid": "إجمالي المدفوع",
+    "totalOwed": "إجمالي المتبقي عليه",
+    "sessionsCount": "عدد مرات الحضور",
+    "pagination": "صفحة {{page}} من {{total}}",
     "school": { "general": "عام", "languages": "لغات", "azhar": "أزهري" },
-    "table": { "code": "الكود", "name": "الاسم", "phone": "الهاتف", "stage": "المرحلة", "school": "المدرسة", "actions": "إجراءات" }
+    "table": { "code": "الكود", "name": "الاسم", "phone": "الهاتف", "stage": "المرحلة", "school": "المدرسة", "actions": "إجراءات", "history": "السجل" }
   },
   "operations": {
     "loadError": "تعذر تحميل البيانات.", "saveError": "تعذر حفظ العملية.", "chooseSession": "اختر حصة أولاً.", "checkInSuccess": "تم تسجيل الحضور والدفع بنجاح.", "checkInError": "تعذر تسجيل الحضور.", "permission": "لا تملك صلاحية تنفيذ هذه العملية.", "loading": "جارٍ تحميل شاشة العمليات...", "auditEmpty": "لا توجد عمليات مسجلة لهذه الوردية.",
-    "lobby": { "title": "الاستقبال السريع", "subtitle": "تسجيل الحضور والدفع", "empty": "لا توجد حصص نشطة أو قريبة.", "studentSearch": "بحث عن طالب", "searchPlaceholder": "اكتب الاسم أو الكود أو الهاتف...", "reference": "مرجع التحويل (اختياري)", "paymentMethod": "طريقة الدفع" },
+    "lobby": { "title": "الاستقبال السريع", "subtitle": "تسجيل الحضور والدفع", "empty": "لا توجد حصص نشطة أو قريبة.", "studentSearch": "بحث عن طالب", "searchPlaceholder": "اكتب الاسم أو الكود أو الهاتف...", "reference": "مرجع التحويل (اختياري)", "paymentMethod": "طريقة الدفع", "attendanceList": "سجل حضور الحصة", "attendanceEmpty": "لا يوجد حضور مسجل في هذه الحصة.", "voidAction": "إلغاء الحضور", "voidConfirm": "هل تريد إلغاء تسجيل حضور هذا الطالب؟", "partialNotice": "دفع جزئي — المتبقي على الطالب", "selected": "الحصة المحددة" },
+    "receipt": { "title": "إيصال تحصيل", "subtitle": "سنتر سيستم — استلام المبالغ", "session": "الحصة", "student": "الطالب", "method": "طريقة الدفع", "amount": "المبلغ المدفوع", "change": "الباقي للطالب", "remaining": "المتبقي على الطالب", "time": "التوقيت", "print": "طباعة الإيصال", "close": "إغلاق الإيصال", "paidFully": "مسدد بالكامل" },
     "shift": { "title": "خزينة الوردية", "subtitle": "إدارة درج المكتب", "desk": "اسم المكتب", "openingCash": "الرصيد الافتتاحي", "actualCash": "الكاش الفعلي عند الإغلاق", "notes": "ملاحظات الإغلاق", "category": "نوع المصروف", "amount": "المبلغ", "description": "الوصف", "addExpense": "تسجيل المصروف", "expectedCashInDrawer": "الكاش المتوقع", "totalCashCollected": "الكاش المقبوض", "totalTeacherCashPayouts": "مستحقات المدرسين", "totalCashExpenses": "مصروفات الكاش", "opened": "تم فتح الوردية.", "closed": "تم إغلاق الوردية.", "expenseSaved": "تم تسجيل المصروف." },
-    "reconciliation": { "title": "مطابقة أعداد الحضور", "subtitle": "مراجعة الاستقبال مع مساعد المدرس", "session": "الحصة", "lobbyCount": "عدد الاستقبال", "assistantCount": "عدد مساعد المدرس", "headcount": "العدد المعتمد", "notes": "ملاحظات حل الفرق", "saved": "تم حفظ المطابقة." },
-    "settlement": { "title": "تصفية مستحقات المدرس", "subtitle": "صرف المستحقات وإغلاق الحصة", "session": "الحصة", "price": "سعر الحصة", "centerFee": "رسوم السنتر", "payment": "طريقة الصرف", "recipient": "اسم المستلم", "saved": "تمت التصفية بنجاح." },
-    "reports": { "title": "التقارير المالية", "subtitle": "ملخص اليوم وسجل الخزينة", "load": "تحميل التقرير", "totalAttendees": "إجمالي الحضور", "centerNetRevenue": "صافي إيراد السنتر", "teacherPayouts": "مستحقات المدرسين", "digitalCollections": "التحصيل الرقمي", "shiftId": "معرف الوردية", "loadAudit": "عرض سجل العمليات" }
+    "reconciliation": { "title": "مطابقة أعداد الحضور", "subtitle": "مراجعة الاستقبال مع مساعد المدرس", "session": "الحصة", "lobbyCount": "عدد الاستقبال", "assistantCount": "عدد مساعد المدرس", "headcount": "العدد المعتمد", "notes": "ملاحظات حل الفرق", "saved": "تم حفظ المطابقة.", "confirmTitle": "تأكيد المطابقة", "confirmBody": "سيتم اعتماد أعداد الحضور وربطها بنتيجة الحصة النهائية." },
+    "settlement": { "title": "تصفية مستحقات المدرس", "subtitle": "صرف المستحقات وإغلاق الحصة", "session": "الحصة", "price": "سعر الحصة", "centerFee": "رسوم السنتر", "payment": "طريقة الصرف", "recipient": "اسم المستلم", "saved": "تمت التصفية بنجاح.", "confirmTitle": "تأكيد التصفية", "confirmBody": "سيتم صرف المستحقات وإقفال الحصة نهائياً، ولن يمكن تعديلها بعد الآن." },
+    "reports": { "title": "التقارير المالية", "subtitle": "ملخص اليوم وسجل الخزينة", "load": "تحميل التقرير", "totalAttendees": "إجمالي الحضور", "centerNetRevenue": "صافي إيراد السنتر", "teacherPayouts": "مستحقات المدرسين", "digitalCollections": "التحصيل الرقمي", "shiftId": "معرف الوردية", "loadAudit": "عرض سجل العمليات", "shiftHistory": "سجل الورديات", "desk": "المكتب", "openedAt": "وقت الفتح", "closedAt": "وقت الإغلاق", "actualCash": "الكاش الفعلي", "cashVariance": "الفرق", "receptionist": "الموظف", "historyEmpty": "لا توجد ورديات مغلقة بعد." },
+    "voucher": { "title": "سند صرف مستحقات مدرس", "session": "الحصة", "teacher": "المدرس", "recipient": "المستلم", "totalRevenue": "إجمالي الإيراد", "centerShare": "نصيب السنتر", "teacherPayout": "صافي المستحقات", "method": "طريقة الصرف", "time": "التوقيت", "print": "طباعة السند", "close": "إغلاق السند" }
+  },
+  "audit": {
+    "SHIFT_OPENED": "فتح الوردية",
+    "ATTENDANCE_CHECKED_IN": "تسجيل حضور",
+    "ATTENDANCE_VOIDED": "إلغاء حضور",
+    "EXPENSE_RECORDED": "تسجيل مصروف",
+    "SHIFT_CLOSED": "إغلاق الوردية",
+    "SESSION_RECONCILED": "مطابقة أعداد",
+    "TEACHER_PAYOUT": "تصفية مستحقات مدرس",
+    "PASSWORD_CHANGED": "تغيير كلمة المرور",
+    "USER_CREATED": "إنشاء مستخدم",
+    "USER_UPDATED": "تعديل مستخدم",
+    "USER_UPDATED_PASSWORD_RESET": "إعادة تعيين كلمة مرور",
+    "USER_DEACTIVATED": "تعطيل مستخدم"
+  },
+  "errors": {
+    "DUPLICATE_CHECK_IN": "الطالب مسجل بالفعل في هذه الحصة.",
+    "SESSION_CAPACITY_REACHED": "هذه الحصة وصلت إلى الحد الأقصى للسعة.",
+    "SHIFT_NOT_OPEN": "يجب فتح الوردية أولاً.",
+    "SHIFT_CLOSED": "تم إغلاق الوردية بالفعل.",
+    "SHIFT_ALREADY_CLOSED": "تم إغلاق الوردية بالفعل.",
+    "SESSION_LOCKED": "الحصة منتهية ومقفلة ولا يمكن تعديلها أو تكرار تسويتها.",
+    "PAYMENT_REFERENCE_REQUIRED": "أدخل رقم العملية لطريقة الدفع الرقمية.",
+    "SCHEDULE_CONFLICT": "يوجد تعارض في الموعد مع حصة أخرى.",
+    "UNAUTHORIZED": "غير مصرح لك بالوصول، يرجى تسجيل الدخول.",
+    "FORBIDDEN": "ليس لديك الصلاحية لتنفيذ هذه العملية.",
+    "AUDIT_ACCESS_DENIED": "ليس لديك الصلاحية لعرض سجل هذه الوردية.",
+    "RECONCILIATION_REQUIRED": "يوجد فرق بين الأعداد؛ يرجى إضافة ملاحظات الحل.",
+    "SESSION_NOT_FOUND": "الحصة غير موجودة.",
+    "STUDENT_NOT_FOUND": "الطالب غير موجود.",
+    "ATTENDANCE_NOT_FOUND": "سجل الحضور غير موجود.",
+    "ATTENDANCE_ALREADY_VOID": "سجل الحضور ملغي بالفعل.",
+    "VOID_FORBIDDEN": "لا يمكنك إلغاء حضور مسجّل ضمن وردية مقفلة أو لا تملكها.",
+    "STUDENT_IN_USE": "لا يمكن حذف طالب له سجل حضور.",
+    "USERNAME_TAKEN": "اسم المستخدم مستخدم بالفعل.",
+    "INVALID_CURRENT_PASSWORD": "كلمة المرور الحالية غير صحيحة.",
+    "PASSWORD_SAME_AS_CURRENT": "كلمة المرور الجديدة مطابقة لكلمة المرور الحالية.",
+    "SELF_DEACTIVATE": "لا يمكنك تعطيل حسابك الخاص.",
+    "SELF_DELETE": "لا يمكنك حذف حسابك الخاص.",
+    "SELF_ROLE_CHANGE": "لا يمكنك تعديل دور حسابك الخاص.",
+    "USER_NOT_FOUND": "المستخدم غير موجود.",
+    "DUPLICATE_RECORD": "هذا السجل موجود مسبقاً بقيمة فريدة مكررة.",
+    "INVALID_PHONE": "رقم الهاتف يجب أن يكون رقم محمول مصري (010/011/012/015) بعشرة أرقام."
+  },
+  "users": {
+    "sectionLabel": "الصلاحيات والحسابات",
+    "title": "إدارة المستخدمين",
+    "add": "إضافة مستخدم",
+    "edit": "تعديل المستخدم",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "fullName": "الاسم الكامل",
+    "role": "الدور",
+    "phone": "الهاتف",
+    "language": "اللغة",
+    "active": "الحساب نشط",
+    "empty": "لا يوجد مستخدمون بعد.",
+    "loadError": "تعذر تحميل المستخدمين.",
+    "saveError": "تعذر حفظ المستخدم.",
+    "saveSuccess": "تم حفظ المستخدم بنجاح.",
+    "deleteSuccess": "تم تعطيل الحساب.",
+    "deactivate": "تعطيل الحساب",
+    "activate": "تفعيل الحساب",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "confirmDelete": "هل تريد تعطيل هذا الحساب؟ سيتعذر على المستخدم تسجيل الدخول.",
+    "roles": { "admin": "مدير النظام", "receptionist": "موظف استقبال" },
+    "selfHint": "لا يمكنك تعطيل أو حذف أو تعديل دور حسابك الخاص."
+  },
+  "changePassword": {
+    "title": "تغيير كلمة المرور",
+    "current": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirm": "تأكيد كلمة المرور الجديدة",
+    "mismatch": "كلمتا المرور الجديدتان غير متطابقتين.",
+    "saved": "تم تغيير كلمة المرور بنجاح.",
+    "submit": "تحديث كلمة المرور",
+    "minLength": "كلمة المرور يجب ألا تقل عن 8 أحرف."
   }
 }

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { Prisma } from '@prisma/client';
-import { PaymentMethod, Role, SessionStatus, ShiftStatus } from '../../../shared/constants/index.js';
+import { AttendanceStatus, PaymentMethod, Role, SessionStatus, ShiftStatus } from '../../../shared/constants/index.js';
 import { prisma } from '../../lib/prisma.js';
 import { buildLobbyAttendancePayload } from '../../lib/socket.js';
 import { authenticate, requireRoles } from '../auth/auth.js';
@@ -10,6 +10,17 @@ import { isValidMoneyAmount, isValidUUID, parsePagination } from '../../lib/http
 export function calculateChangeOwed(amountReceived: number, fee: number): number {
   const change = amountReceived - fee;
   return change > 0 ? change : 0;
+}
+
+/** Remaining due on a check-in when the student paid less than the session price. */
+export function calculateRemainingDue(amountPaid: number, fee: number): number {
+  const remaining = fee - amountPaid;
+  return remaining > 0 ? Number(remaining.toFixed(2)) : 0;
+}
+
+/** A check-in is partial when a positive amount was collected that still leaves a balance. */
+export function isPartialPayment(amountPaid: number, fee: number): boolean {
+  return amountPaid >= 0 && amountPaid < fee;
 }
 
 export function isSessionEligibleForLobbyDashboard(session: {
@@ -93,7 +104,7 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
       include: {
         teacher: { select: { id: true, fullName: true, subject: true } },
         room: { select: { id: true, name: true, capacity: true } },
-        _count: { select: { attendances: true } },
+        _count: { select: { attendances: { where: { status: { not: AttendanceStatus.VOID } } } } },
       },
       orderBy: [{ status: 'desc' }, { startTime: 'asc' }],
     });
@@ -167,14 +178,14 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(404).send(validation('الطالب غير موجود.', 'Student not found.', 'STUDENT_NOT_FOUND'));
     }
 
-    const currentAttendanceCount = await prisma.attendance.count({ where: { sessionId } });
+    const currentAttendanceCount = await prisma.attendance.count({ where: { sessionId, status: { not: AttendanceStatus.VOID } } });
     if (currentAttendanceCount >= session.room.capacity) {
       return reply.code(400).send(validation('وصلت الحصة إلى الحد الأقصى للسعة.', 'Session capacity has been reached.', 'SESSION_CAPACITY_REACHED'));
     }
 
     const fee = Number(session.sessionPrice);
     const cashAmount = amountPaid ?? fee;
-    const duplicate = await prisma.attendance.findUnique({ where: { sessionId_studentId: { sessionId, studentId } } });
+    const duplicate = await prisma.attendance.findFirst({ where: { sessionId, studentId, status: { not: AttendanceStatus.VOID } } });
 
     if (duplicate) {
       return reply.code(409).send({
@@ -192,7 +203,7 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
       const { attendance, newLobbyCount } = await prisma.$transaction(async (transaction) => {
         const currentShift = await transaction.shiftRegister.findUnique({ where: { id: activeShift.id }, select: { status: true } });
         if (!currentShift || currentShift.status !== ShiftStatus.OPEN) throw new Error('SHIFT_CLOSED_DURING_CHECKIN');
-        const currentAttendanceCount = await transaction.attendance.count({ where: { sessionId } });
+        const currentAttendanceCount = await transaction.attendance.count({ where: { sessionId, status: { not: AttendanceStatus.VOID } } });
         if (currentAttendanceCount >= session.room.capacity) throw new Error('SESSION_CAPACITY_REACHED');
         const attendance = await transaction.attendance.create({
           data: {
@@ -204,11 +215,11 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
             changeOwed: new Prisma.Decimal(calculateChangeOwed(cashAmount, fee)),
             paymentMethod,
             paymentReference: paymentReference?.trim() || null,
-            status: 'PAID',
+            status: isPartialPayment(cashAmount, fee) ? AttendanceStatus.PARTIAL : AttendanceStatus.PAID,
           },
         });
-        const newLobbyCount = await transaction.attendance.count({ where: { sessionId } });
-        await recordAuditEntry({ actorId: request.user.sub, shiftRegisterId: activeShift.id, action: 'ATTENDANCE_CHECKED_IN', entityType: 'ATTENDANCE', entityId: attendance.id, amount: cashAmount, metadata: { sessionId, studentId, paymentMethod } }, transaction);
+        const newLobbyCount = await transaction.attendance.count({ where: { sessionId, status: { not: AttendanceStatus.VOID } } });
+        await recordAuditEntry({ actorId: request.user.sub, shiftRegisterId: activeShift.id, action: 'ATTENDANCE_CHECKED_IN', entityType: 'ATTENDANCE', entityId: attendance.id, amount: cashAmount, metadata: { sessionId, studentId, paymentMethod, status: attendance.status } }, transaction);
         return { attendance, newLobbyCount };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       const payload = buildLobbyAttendancePayload({
@@ -232,8 +243,11 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
             studentId: attendance.studentId,
             studentName: student.fullName,
             amountPaid: Number(attendance.amountPaid),
+            sessionPrice: fee,
+            remainingDue: calculateRemainingDue(Number(attendance.amountPaid), fee),
             changeOwed: Number(attendance.changeOwed),
             paymentMethod: attendance.paymentMethod,
+            status: attendance.status,
             checkInTime: attendance.checkInTime.toISOString(),
             deskIdentifier: activeShift.deskIdentifier,
           },
@@ -274,6 +288,7 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
         include: {
           student: { select: { id: true, fullName: true, guardianPhone: true, studentPhone: true } },
           shiftRegister: { select: { deskIdentifier: true } },
+          session: { select: { sessionPrice: true, title: true } },
         },
         orderBy: { checkInTime: 'asc' },
         skip: pagination.skip,
@@ -285,19 +300,103 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
     return reply.send({
       success: true,
       data: {
-        attendances: attendances.map((attendance) => ({
-          id: attendance.id,
-          studentId: attendance.studentId,
-          studentName: attendance.student.fullName,
-          guardianPhone: attendance.student.guardianPhone,
-          studentPhone: attendance.student.studentPhone,
-          amountPaid: Number(attendance.amountPaid),
-          changeOwed: Number(attendance.changeOwed),
-          paymentMethod: attendance.paymentMethod,
-          checkInTime: attendance.checkInTime.toISOString(),
-          deskIdentifier: attendance.shiftRegister.deskIdentifier,
-        })),
+        attendances: attendances.map((attendance) => {
+          const fee = Number(attendance.session.sessionPrice);
+          const amountPaid = Number(attendance.amountPaid);
+          return {
+            id: attendance.id,
+            studentId: attendance.studentId,
+            studentName: attendance.student.fullName,
+            guardianPhone: attendance.student.guardianPhone,
+            studentPhone: attendance.student.studentPhone,
+            amountPaid,
+            sessionPrice: fee,
+            remainingDue: calculateRemainingDue(amountPaid, fee),
+            changeOwed: Number(attendance.changeOwed),
+            paymentMethod: attendance.paymentMethod,
+            status: attendance.status,
+            checkInTime: attendance.checkInTime.toISOString(),
+            deskIdentifier: attendance.shiftRegister.deskIdentifier,
+          };
+        }),
         pagination: { page: pagination.page, limit: pagination.limit, total, pages: Math.ceil(total / pagination.limit) },
+      },
+    });
+  });
+
+  app.post<{ Params: { id: string } }>('/attendances/:id/void', {
+    preHandler: [authenticate, requireRoles(Role.ADMIN, Role.RECEPTIONIST), app.rateLimit.financial],
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        additionalProperties: false,
+        properties: { id: { type: 'string', pattern: UUID_FORMAT } },
+      },
+    },
+  }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) {
+      return reply.code(400).send(validation('معرّف الحضور غير صالح.', 'The attendance id is invalid.'));
+    }
+
+    const attendance = await prisma.attendance.findUnique({
+      where: { id: request.params.id },
+      include: {
+        session: { select: { id: true, status: true, roomId: true } },
+        shiftRegister: { select: { id: true, status: true, deskIdentifier: true } },
+        student: { select: { fullName: true } },
+      },
+    });
+    if (!attendance) {
+      return reply.code(404).send(validation('سجل الحضور غير موجود.', 'Attendance record not found.', 'ATTENDANCE_NOT_FOUND'));
+    }
+    if (attendance.status === AttendanceStatus.VOID) {
+      return reply.code(409).send(validation('سجل الحضور ملغي بالفعل.', 'This check-in has already been voided.', 'ATTENDANCE_ALREADY_VOID'));
+    }
+    if (attendance.session.status === SessionStatus.COMPLETED) {
+      return reply.code(409).send(validation('لا يمكن إلغاء حضور في حصة منتهية ومقفلة.', 'Check-ins on a locked completed session cannot be voided.', 'SESSION_LOCKED'));
+    }
+    const canVoid =
+      request.user.role === Role.ADMIN ||
+      (attendance.shiftRegister.status === ShiftStatus.OPEN &&
+        (await prisma.shiftRegister.findFirst({
+          where: { id: attendance.shiftRegister.id, receptionistId: request.user.sub, status: ShiftStatus.OPEN },
+          select: { id: true },
+        })) !== null);
+
+    if (!canVoid) {
+      return reply.code(403).send(validation('لا يمكنك إلغاء حضور مسجّل ضمن وردية مقفلة أو لا تملكها.', 'You can only void check-ins from an open shift you own.', 'VOID_FORBIDDEN'));
+    }
+
+    const voided = await prisma.$transaction(async (transaction) => {
+      const current = await transaction.attendance.findUnique({ where: { id: request.params.id }, include: { session: { select: { status: true } } } });
+      if (!current || current.status === AttendanceStatus.VOID) throw new Error('ATTENDANCE_ALREADY_VOID');
+      if (current.session.status === SessionStatus.COMPLETED) throw new Error('SESSION_LOCKED');
+      const updated = await transaction.attendance.update({ where: { id: request.params.id }, data: { status: AttendanceStatus.VOID } });
+      await recordAuditEntry({
+        actorId: request.user.sub,
+        shiftRegisterId: attendance.shiftRegister.id,
+        action: 'ATTENDANCE_VOIDED',
+        entityType: 'ATTENDANCE',
+        entityId: updated.id,
+        amount: Number(updated.amountPaid),
+        metadata: { sessionId: attendance.session.id, studentId: updated.studentId, method: updated.paymentMethod, voidedAmount: Number(updated.amountPaid) },
+      }, transaction);
+      return updated;
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    const newLobbyCount = await prisma.attendance.count({ where: { sessionId: attendance.session.id, status: { not: AttendanceStatus.VOID } } });
+    app.io?.to('center:lobby').emit('attendance:voided', { sessionId: attendance.session.id, attendanceId: voided.id, newLobbyCount });
+
+    return reply.send({
+      success: true,
+      data: {
+        attendance: {
+          id: voided.id,
+          status: voided.status,
+          sessionId: attendance.session.id,
+          newSessionLobbyCount: newLobbyCount,
+        },
       },
     });
   });

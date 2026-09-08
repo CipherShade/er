@@ -19,6 +19,7 @@ import attendanceRoutes from './modules/attendances/attendances.js';
 import reconciliationRoutes from './modules/reconciliation/reconciliation.js';
 import settlementRoutes from './modules/settlements/settlements.js';
 import reportRoutes from './modules/reports/reports.js';
+import userRoutes from './modules/users/users.js';
 
 const REDACT_PATHS = [
   'req.headers.cookie',
@@ -106,6 +107,7 @@ export function buildApp(options?: BuildAppOptions): FastifyInstance {
   app.register(reconciliationRoutes, { prefix: '/api' });
   app.register(settlementRoutes, { prefix: '/api' });
   app.register(reportRoutes, { prefix: '/api/reports' });
+  app.register(userRoutes, { prefix: '/api/users' });
 
   if (config.nodeEnv === 'production') {
     app.register(fastifyStatic, { root: path.join(process.cwd(), 'dist'), wildcard: false });

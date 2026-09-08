@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../../src/client/locales/i18n';
 import { OperationsPage } from '@client/features/operations/OperationsPage';
+import { formatMoney } from '@client/lib/format';
 import { jsonRes, parseBody, stubFetch } from './testUtils';
 
 const shiftOpen = { id: 'sh-1', financials: { expectedCashInDrawer: 100, totalCashCollected: 0, totalTeacherCashPayouts: 0, totalCashExpenses: 0 } };
@@ -45,8 +46,8 @@ describe('ShiftPage (OperationsPage mode="shift")', () => {
     ]);
     render(<OperationsPage mode="shift" />);
 
-    expect(await screen.findByText('100.00 ج.م')).toBeInTheDocument();
-    expect(screen.getAllByText('0.00 ج.م').length).toBe(3);
+    expect(await screen.findByText(formatMoney(100, 'ar'))).toBeInTheDocument();
+    expect(screen.getAllByText(formatMoney(0, 'ar')).length).toBe(3);
 
     await user.type(screen.getByLabelText(i18n.t('operations.shift.category')), 'أدوات مكتبية');
     await user.type(screen.getByLabelText(i18n.t('operations.shift.amount')), '30.5');

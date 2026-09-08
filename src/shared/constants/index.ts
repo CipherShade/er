@@ -44,6 +44,7 @@ export type ShiftStatus = (typeof SHIFT_STATUSES)[keyof typeof SHIFT_STATUSES];
 
 export const ATTENDANCE_STATUSES = {
   PAID: 'PAID',
+  PARTIAL: 'PARTIAL',
   EXCUSED: 'EXCUSED',
   VOID: 'VOID',
 } as const;

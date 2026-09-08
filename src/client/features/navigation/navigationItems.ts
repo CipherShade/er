@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Building2, Calendar, ClipboardCheck, Coins, GraduationCap, Users, Wallet } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, Calendar, ClipboardCheck, Coins, GraduationCap, UserCog, Users, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type NavigationItem = {
@@ -18,5 +18,6 @@ export const navigationItems: NavigationItem[] = [
   { id: 'reconciliation', labelKey: 'navigation.reconciliation', icon: ClipboardCheck },
   { id: 'settlement', labelKey: 'navigation.settlement', icon: Coins },
   { id: 'reports', labelKey: 'navigation.reports', icon: BarChart3, adminOnly: true },
+  { id: 'users', labelKey: 'navigation.users', icon: UserCog, adminOnly: true },
 ];
 

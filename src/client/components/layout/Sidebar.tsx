@@ -1,20 +1,28 @@
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { navigationItems } from '../../features/navigation/navigationItems';
 import { useAuth } from '../../auth/AuthContext';
 import { Role } from '../../../shared/constants/index';
 
-type SidebarProps = { activeId: string; onSelect: (id: string) => void };
-
-export function Sidebar({ activeId, onSelect }: SidebarProps) {
+export function Sidebar() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
+
+  const activeId = location.pathname.replace(/^\//, '').split('/')[0] || 'lobby';
 
   const visibleItems = navigationItems.filter(
     (item) => !item.adminOnly || user?.role === Role.ADMIN
   );
+
+  const select = (id: string) => {
+    navigate(`/${id}`);
+    setOpen(false);
+  };
 
   return (
     <>
@@ -26,7 +34,7 @@ export function Sidebar({ activeId, onSelect }: SidebarProps) {
         <div className="mb-6 flex items-center justify-between lg:hidden"><span className="font-bold">{t('navigation.menu')}</span><button type="button" onClick={() => setOpen(false)} aria-label={t('actions.close')}><X className="h-5 w-5" /></button></div>
         <nav aria-label={t('navigation.ariaLabel')} className="space-y-1">
           {visibleItems.map(({ id, labelKey, icon: Icon }) => (
-            <button key={id} type="button" onClick={() => { onSelect(id); setOpen(false); }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-semibold transition ${activeId === id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}>
+            <button key={id} type="button" onClick={() => select(id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-semibold transition ${activeId === id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}>
               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" /> <span>{t(labelKey)}</span>
             </button>
           ))}

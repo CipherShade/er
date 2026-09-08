@@ -4,6 +4,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { Role } from '../../../shared/constants/index.js';
 import { prisma } from '../../lib/prisma.js';
 import { config } from '../../config/index.js';
+import { recordAuditEntry } from '../reports/audit.js';
 
 export type AuthTokenPayload = {
   sub: string;
@@ -93,9 +94,44 @@ const authRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get('/me', { preHandler: authenticate }, async (request, reply) => {
-    const user = await prisma.user.findUnique({ where: { id: request.user.sub }, select: publicUserSelect });
+    const user = await prisma.user.findUnique({
+      where: { id: request.user.sub },
+      select: { ...publicUserSelect, isActive: true, createdAt: true },
+    });
     if (!user) return reply.code(401).send({ success: false, error: { code: 'UNAUTHORIZED', message: 'الحساب غير موجود.', messageEn: 'Account not found.' } });
     return reply.send({ success: true, data: { user } });
+  });
+
+  app.post<{ Body: { currentPassword: string; newPassword: string } }>('/change-password', {
+    preHandler: [authenticate, app.rateLimit.financial],
+    schema: {
+      body: {
+        type: 'object',
+        required: ['currentPassword', 'newPassword'],
+        additionalProperties: false,
+        properties: {
+          currentPassword: { type: 'string', minLength: 1, maxLength: 200 },
+          newPassword: { type: 'string', minLength: 8, maxLength: 200 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const user = await prisma.user.findUnique({ where: { id: request.user.sub }, select: { id: true, passwordHash: true, username: true } });
+    if (!user) return reply.code(401).send({ success: false, error: { code: 'UNAUTHORIZED', message: 'الحساب غير موجود.', messageEn: 'Account not found.' } });
+    if (!(await argon2.verify(user.passwordHash, request.body.currentPassword))) {
+      return reply.code(400).send({ success: false, error: { code: 'INVALID_CURRENT_PASSWORD', message: 'كلمة المرور الحالية غير صحيحة.', messageEn: 'The current password is incorrect.' } });
+    }
+    if (request.body.newPassword === request.body.currentPassword) {
+      return reply.code(400).send({ success: false, error: { code: 'PASSWORD_SAME_AS_CURRENT', message: 'كلمة المرور الجديدة مطابقة لكلمة المرور الحالية.', messageEn: 'The new password must differ from the current one.' } });
+    }
+    await prisma.$transaction(async (transaction) => {
+      await transaction.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await argon2.hash(request.body.newPassword, { type: argon2.argon2id, memoryCost: 65536, timeCost: 3, parallelism: 4 }) },
+      });
+      await recordAuditEntry({ actorId: user.id, shiftRegisterId: null, action: 'PASSWORD_CHANGED', entityType: 'USER', entityId: user.id, metadata: { username: user.username } }, transaction);
+    });
+    return reply.send({ success: true, data: null });
   });
 };
 

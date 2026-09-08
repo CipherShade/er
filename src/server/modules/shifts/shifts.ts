@@ -4,7 +4,7 @@ import { PaymentMethod, Role, ShiftStatus } from '../../../shared/constants/inde
 import { prisma } from '../../lib/prisma.js';
 import { authenticate, requireRoles } from '../auth/auth.js';
 import { recordAuditEntry } from '../reports/audit.js';
-import { isValidMoneyAmount } from '../../lib/http.js';
+import { isValidMoneyAmount, parsePagination } from '../../lib/http.js';
 
 export type ShiftFinancialSummaryInput = {
   openingCash: number;
@@ -246,23 +246,34 @@ const shiftRoutes: FastifyPluginAsync = async (app) => {
     const expectedCash = roundAmount(financials.expectedCashInDrawer);
     const cashVariance = calculateCashVariance(actualCashCounted, expectedCash);
 
-    const closedShift = await prisma.$transaction(async (transaction) => {
-      const updatedShift = await transaction.shiftRegister.updateMany({
-        where: { id: shift.id, status: ShiftStatus.OPEN },
-        data: {
-          closedAt: new Date(),
-          actualCashCounted: new Prisma.Decimal(actualCashCounted),
-          expectedCash: new Prisma.Decimal(expectedCash),
-          cashVariance: new Prisma.Decimal(cashVariance),
-          status: ShiftStatus.CLOSED,
-          closingNotes: request.body.closingNotes?.trim() || null,
-        },
+    let closedShift: Awaited<ReturnType<typeof prisma.shiftRegister.findUniqueOrThrow>>;
+    try {
+      closedShift = await prisma.$transaction(async (transaction) => {
+        const updatedShift = await transaction.shiftRegister.updateMany({
+          where: { id: shift.id, status: ShiftStatus.OPEN },
+          data: {
+            closedAt: new Date(),
+            actualCashCounted: new Prisma.Decimal(actualCashCounted),
+            expectedCash: new Prisma.Decimal(expectedCash),
+            cashVariance: new Prisma.Decimal(cashVariance),
+            status: ShiftStatus.CLOSED,
+            closingNotes: request.body.closingNotes?.trim() || null,
+          },
+        });
+        if (updatedShift.count !== 1) throw new Error('SHIFT_ALREADY_CLOSED');
+        const result = await transaction.shiftRegister.findUniqueOrThrow({ where: { id: shift.id } });
+        await recordAuditEntry({ actorId: request.user.sub, shiftRegisterId: result.id, action: 'SHIFT_CLOSED', entityType: 'SHIFT_REGISTER', entityId: result.id, amount: actualCashCounted, metadata: { expectedCash, cashVariance, closingNotes: result.closingNotes } }, transaction);
+        return result;
       });
-      if (updatedShift.count !== 1) throw new Error('SHIFT_ALREADY_CLOSED');
-      const result = await transaction.shiftRegister.findUniqueOrThrow({ where: { id: shift.id } });
-      await recordAuditEntry({ actorId: request.user.sub, shiftRegisterId: result.id, action: 'SHIFT_CLOSED', entityType: 'SHIFT_REGISTER', entityId: result.id, amount: actualCashCounted, metadata: { expectedCash, cashVariance, closingNotes: result.closingNotes } }, transaction);
-      return result;
-    });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'SHIFT_ALREADY_CLOSED') {
+        return reply.code(409).send({
+          success: false,
+          error: { code: 'SHIFT_ALREADY_CLOSED', message: 'تم إغلاق الوردية بالفعل.', messageEn: 'The shift has already been closed.' },
+        });
+      }
+      throw error;
+    }
 
     return reply.send({
       success: true,
@@ -273,6 +284,29 @@ const shiftRoutes: FastifyPluginAsync = async (app) => {
           totalInstapay: financials.totalInstapayCollected,
           financials,
         },
+      },
+    });
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string } }>('/history', { preHandler: [authenticate, requireRoles(Role.ADMIN, Role.RECEPTIONIST)] }, async (request, reply) => {
+    const pagination = parsePagination(request.query);
+    if (!pagination.ok) return reply.code(400).send(pagination.error);
+    const where: Record<string, unknown> = request.user.role === Role.ADMIN ? { status: ShiftStatus.CLOSED } : { receptionistId: request.user.sub, status: ShiftStatus.CLOSED };
+    const [shifts, total] = await Promise.all([
+      prisma.shiftRegister.findMany({
+        where,
+        include: { receptionist: { select: { id: true, fullName: true } } },
+        orderBy: { openedAt: 'desc' },
+        skip: pagination.skip,
+        take: pagination.limit,
+      }),
+      prisma.shiftRegister.count({ where }),
+    ]);
+    return reply.send({
+      success: true,
+      data: {
+        shifts: await Promise.all(shifts.map(async (shift) => ({ ...serializeShift(shift), receptionist: shift.receptionist.fullName, financials: await loadShiftFinancials(shift.id) }))),
+        pagination: { page: pagination.page, limit: pagination.limit, total, pages: Math.ceil(total / pagination.limit) },
       },
     });
   });
@@ -307,24 +341,34 @@ const shiftRoutes: FastifyPluginAsync = async (app) => {
         });
       }
 
-      const expense = await prisma.$transaction(async (transaction) => {
-      const currentShift = await transaction.shiftRegister.findUnique({ where: { id: openShift.id }, select: { status: true } });
-      if (!currentShift || currentShift.status !== ShiftStatus.OPEN) throw new Error('SHIFT_CLOSED');
-      const createdExpense = await transaction.expense.create({
-        data: {
-          category: request.body.category.trim(),
-          amount: new Prisma.Decimal(request.body.amount),
-          paymentMethod: PaymentMethod.CASH,
-          description: request.body.description.trim(),
-          createdById: request.user.sub,
-          shiftRegisterId: openShift.id,
-        },
-      });
-      await recordAuditEntry({ actorId: request.user.sub, shiftRegisterId: openShift.id, action: 'EXPENSE_RECORDED', entityType: 'EXPENSE', entityId: createdExpense.id, amount: request.body.amount, metadata: { category: createdExpense.category, paymentMethod: createdExpense.paymentMethod } }, transaction);
-      return createdExpense;
-    });
+      try {
+        const expense = await prisma.$transaction(async (transaction) => {
+          const currentShift = await transaction.shiftRegister.findUnique({ where: { id: openShift.id }, select: { status: true } });
+          if (!currentShift || currentShift.status !== ShiftStatus.OPEN) throw new Error('SHIFT_CLOSED');
+          const createdExpense = await transaction.expense.create({
+            data: {
+              category: request.body.category.trim(),
+              amount: new Prisma.Decimal(request.body.amount),
+              paymentMethod: PaymentMethod.CASH,
+              description: request.body.description.trim(),
+              createdById: request.user.sub,
+              shiftRegisterId: openShift.id,
+            },
+          });
+          await recordAuditEntry({ actorId: request.user.sub, shiftRegisterId: openShift.id, action: 'EXPENSE_RECORDED', entityType: 'EXPENSE', entityId: createdExpense.id, amount: request.body.amount, metadata: { category: createdExpense.category, paymentMethod: createdExpense.paymentMethod } }, transaction);
+          return createdExpense;
+        });
 
-    return reply.code(201).send({ success: true, data: { expense } });
+        return reply.code(201).send({ success: true, data: { expense } });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'SHIFT_CLOSED') {
+          return reply.code(409).send({
+            success: false,
+            error: { code: 'SHIFT_CLOSED', message: 'تم إغلاق الوردية بالفعل، لا يمكن تسجيل المصروف.', messageEn: 'The shift was already closed and can no longer accept expenses.' },
+          });
+        }
+        throw error;
+      }
   }
 
   const expense = await prisma.$transaction(async (transaction) => {

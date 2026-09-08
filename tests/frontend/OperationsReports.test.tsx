@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../../src/client/locales/i18n';
 import { OperationsPage } from '@client/features/operations/OperationsPage';
+import { formatMoney } from '@client/lib/format';
 import { jsonRes, stubFetch } from './testUtils';
 
 describe('ReportsPage (OperationsPage mode="reports")', () => {
@@ -24,9 +25,9 @@ describe('ReportsPage (OperationsPage mode="reports")', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('operations.reports.load') }));
 
     expect(await screen.findByText('7')).toBeInTheDocument();
-    expect(screen.getByText('305.50 ج.م')).toBeInTheDocument();
-    expect(screen.getByText('800.00 ج.م')).toBeInTheDocument();
-    expect(screen.getByText('150.00 ج.م')).toBeInTheDocument();
+    expect(screen.getByText(formatMoney(305.5, 'ar'))).toBeInTheDocument();
+    expect(screen.getByText(formatMoney(800, 'ar'))).toBeInTheDocument();
+    expect(screen.getByText(formatMoney(150, 'ar'))).toBeInTheDocument();
     await waitFor(() => expect(loadReport).toHaveBeenCalledWith('GET'));
   });
 
@@ -58,7 +59,7 @@ describe('ReportsPage (OperationsPage mode="reports")', () => {
 
     expect(await screen.findByText('SHIFT_OPENED')).toBeInTheDocument();
     expect(screen.getByText('ATTENDANCE_CHECKED_IN')).toBeInTheDocument();
-    expect(screen.getByText('150.00 ج.م')).toBeInTheDocument();
+    expect(screen.getByText(formatMoney(150, 'ar'))).toBeInTheDocument();
   });
 
   it('shows the empty state when a shift has no audit entries', async () => {

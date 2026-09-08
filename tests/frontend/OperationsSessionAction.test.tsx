@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../../src/client/locales/i18n';
 import { OperationsPage } from '@client/features/operations/OperationsPage';
+import { formatMoney } from '@client/lib/format';
 import { jsonRes, parseBody, stubFetch } from './testUtils';
 
 describe('SessionActionPage reconciliation (mode="reconciliation")', () => {
@@ -26,6 +27,8 @@ describe('SessionActionPage reconciliation (mode="reconciliation")', () => {
     await user.type(screen.getByLabelText(i18n.t('operations.reconciliation.headcount')), '3');
     await user.type(screen.getByLabelText(i18n.t('operations.reconciliation.notes')), 'الفرق معتمد');
     await user.click(screen.getByRole('button', { name: i18n.t('actions.reconcile') }));
+    expect(await screen.findByText(i18n.t('operations.reconciliation.confirmTitle'))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('actions.confirm') }));
 
     await waitFor(() => {
       expect(reconcileBody).toHaveBeenCalledWith({ assistantCount: 2, reconciledHeadcount: 3, resolutionNotes: 'الفرق معتمد' });
@@ -57,12 +60,14 @@ describe('SessionActionPage settlement (mode="settlement")', () => {
     render(<OperationsPage mode="settlement" />);
 
     await user.selectOptions(await screen.findByLabelText(i18n.t('operations.settlement.session')), 'ses-2');
-    expect(screen.getByText('150.00 ج.م')).toBeInTheDocument();
-    expect(screen.getByText('20.00 ج.م')).toBeInTheDocument();
+    expect(screen.getByText(formatMoney(150, 'ar'))).toBeInTheDocument();
+    expect(screen.getByText(formatMoney(20, 'ar'))).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText(i18n.t('operations.settlement.payment')), 'VODAFONE_CASH');
     await user.type(screen.getByLabelText(i18n.t('operations.settlement.recipient')), 'محمود عبد الرحمن');
     await user.click(screen.getByRole('button', { name: i18n.t('actions.settlePayout') }));
+    expect(await screen.findByText(i18n.t('operations.settlement.confirmTitle'))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('actions.confirm') }));
 
     await waitFor(() => {
       expect(settleBody).toHaveBeenCalledWith({ payoutMethod: 'VODAFONE_CASH', recipientName: 'محمود عبد الرحمن' });
