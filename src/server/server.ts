@@ -15,9 +15,70 @@ const io = new Server(app.server, {
 
 attachSocketServer(app, io);
 
+async function bootstrapAdminUser(): Promise<void> {
+  try {
+    const adminExists = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    if (!adminExists) {
+      const argon2 = await import('argon2');
+      const adminPass = process.env.SEED_ADMIN_PASSWORD || 'AdminPass@12345';
+      const hash = await argon2.hash(adminPass, {
+        type: argon2.argon2id,
+        memoryCost: 65536,
+        timeCost: 3,
+        parallelism: 4,
+      });
+      await prisma.user.upsert({
+        where: { username: 'admin' },
+        update: { passwordHash: hash },
+        create: {
+          username: 'admin',
+          email: 'admin@educentererp.local',
+          passwordHash: hash,
+          fullName: 'مدير النظام',
+          role: 'ADMIN',
+          phoneNumber: '01000000000',
+          preferredLanguage: 'ar',
+          isActive: true,
+        },
+      });
+      app.log.info('Default admin user auto-bootstrapped successfully');
+    }
+
+    const recepExists = await prisma.user.findFirst({ where: { role: 'RECEPTIONIST' } });
+    if (!recepExists) {
+      const argon2 = await import('argon2');
+      const recepPass = process.env.SEED_RECEPTIONIST_PASSWORD || 'RecepPass@12345';
+      const hash = await argon2.hash(recepPass, {
+        type: argon2.argon2id,
+        memoryCost: 65536,
+        timeCost: 3,
+        parallelism: 4,
+      });
+      await prisma.user.upsert({
+        where: { username: 'reception1' },
+        update: { passwordHash: hash },
+        create: {
+          username: 'reception1',
+          email: 'reception1@educentererp.local',
+          passwordHash: hash,
+          fullName: 'سارة عبد الرحمن',
+          role: 'RECEPTIONIST',
+          phoneNumber: '01012345678',
+          preferredLanguage: 'ar',
+          isActive: true,
+        },
+      });
+      app.log.info('Default receptionist user auto-bootstrapped successfully');
+    }
+  } catch (err) {
+    app.log.warn({ err }, 'Auto-bootstrap user creation skipped or encountered an error');
+  }
+}
+
 async function start(): Promise<void> {
   try {
     await app.listen({ port: config.port, host: '0.0.0.0' });
+    await bootstrapAdminUser();
 
     app.log.info(
       { environment: config.nodeEnv },
