@@ -1,64 +1,99 @@
-import { KeyRound, Languages, Layers, LogOut } from 'lucide-react';
+import { ChevronDown, Languages, LogOut, Palette } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { DeskStationBadge } from './DeskStationBadge';
+import { Avatar, notify } from '../ui/kit';
+import { THEMES, getStoredTheme, storeTheme, type Theme } from '../ui/theme';
 
-export function Header() {
+const CENTER_NAME = import.meta.env.VITE_CENTER_NAME || '';
+
+export function Header({ activeLabel }: { activeLabel: string }) {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isArabic = i18n.language === 'ar';
-  const initial = (user?.fullName ?? '؟').trim().charAt(0) || '؟';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getStoredTheme);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onPointer = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointer);
+    return () => document.removeEventListener('mousedown', onPointer);
+  }, []);
+
+  const switchTheme = (next: Theme) => {
+    setTheme(next);
+    storeTheme(next);
+  };
+
+  const handleLogout = () => { void logout(); notify(t('actions.signOut') + ' ✓', 'success'); };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
-      <div className="mx-auto flex min-h-16 max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600"><Layers className="h-6 w-6" /></div>
-          <div>
-            <h1 className="font-bold text-white">{t('appName')}</h1>
-            <p className="hidden text-xs text-slate-400 sm:block">{t('appSubtitle')}</p>
+    <header className="header">
+      <div className="header-group">
+        <div className="brand">
+          <span className="brand-logo">م</span>
+          <div style={{ minWidth: 0 }}>
+            <div className="brand-name">{t('appName')}</div>
+            <div className="brand-sub">{CENTER_NAME || t('center')}</div>
           </div>
         </div>
-        <div className="hidden xl:block"><DeskStationBadge /></div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => i18n.changeLanguage(isArabic ? 'en' : 'ar')}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-800"
-            aria-label={t('actions.switchLanguage')}
-          >
-            <Languages className="h-4 w-4" />
-            {isArabic ? 'English' : 'عربي'}
+        <div className="center-chip" aria-hidden={isArabic ? undefined : 'true'} style={{ marginInlineStart: 8 }}>
+          <span className="dot" />
+          {t('desk.connected')}
+        </div>
+      </div>
+
+      <div className="breadcrumb" style={{ marginInlineStart: 12 }}>
+        <span>{t('appName')}</span>
+        <span aria-hidden="true">/</span>
+        <b>{activeLabel}</b>
+      </div>
+
+      <div className="header-actions">
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          onClick={() => i18n.changeLanguage(isArabic ? 'en' : 'ar')}
+          aria-label={t('actions.switchLanguage')}
+        >
+          <Languages className="h-4 w-4" />{isArabic ? t('languages.en') : t('languages.ar')}
+        </button>
+        <div className="theme-dots" role="group" aria-label={t('theme.toggle')} title={t('theme.toggle')}>
+          <Palette className="h-4 w-4" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+          {THEMES.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`theme-dot theme-dot--${name} ${theme === name ? 'theme-dot--active' : ''}`}
+              onClick={() => switchTheme(name)}
+              aria-label={t(`theme.${name}`)}
+              title={t(`theme.${name}`)}
+            />
+          ))}
+        </div>
+        <div className="user-menu" ref={menuRef}>
+          <button type="button" className="user-trigger" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-haspopup="menu">
+            <div className="meta" style={{ marginInlineEnd: 4 }}>
+              <div className="name">{user?.fullName || user?.username}</div>
+              <div className="role">{t(`roleName.${user?.role.toLowerCase()}`)}</div>
+            </div>
+            <Avatar name={user?.fullName || '•'} size={32} />
+            <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/change-password')}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-800"
-            aria-label={t('changePassword.title')}
-            title={t('changePassword.title')}
-          >
-            <KeyRound className="h-4 w-4" />
-            <span className="hidden md:inline">{t('changePassword.title')}</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="hidden text-start sm:block">
-              <span className="block text-xs text-slate-400">{t(`users.roles.${user?.role}`, '')}</span>
-              <span className="block max-w-36 truncate text-sm font-bold text-white">{user?.fullName}</span>
-            </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400">{initial}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => void logout()}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
-            aria-label={t('actions.logout')}
-            title={t('actions.logout')}
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden md:inline">{t('actions.logout')}</span>
-          </button>
+          {menuOpen && (
+            <div className="user-dropdown" role="menu">
+              <div className="dd-header">
+                <div className="name">{user?.fullName}</div>
+                <div className="role">{t(`roleName.${user?.role.toLowerCase()}`)} · @{user?.username}</div>
+              </div>
+              <button type="button" className="dd-item dd-item--danger" role="menuitem" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" aria-hidden="true" />{t('actions.signOut')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

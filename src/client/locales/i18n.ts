@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import arCommon from './ar/common.json';
 import enCommon from './en/common.json';
+import { getStoredTheme, applyTheme } from '../components/ui/theme';
 
 i18n
   .use(initReactI18next)
@@ -10,7 +11,7 @@ i18n
       ar: { common: arCommon },
       en: { common: enCommon },
     },
-    lng: 'ar', // Arabic is the primary default language
+    lng: localStorage.getItem('cos_language') || 'ar',
     fallbackLng: 'en',
     supportedLngs: ['ar', 'en'],
     returnEmptyString: false,
@@ -25,9 +26,11 @@ i18n.on('languageChanged', (lng) => {
   const dir = lng === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.dir = dir;
   document.documentElement.lang = lng;
+  localStorage.setItem('cos_language', lng);
 });
 
 document.documentElement.dir = 'rtl';
 document.documentElement.lang = 'ar';
+applyTheme(getStoredTheme());
 
 export default i18n;

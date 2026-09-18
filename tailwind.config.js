@@ -7,21 +7,21 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        cairo: ['Cairo', 'sans-serif'],
+        cairo: ['Cairo', 'Inter', 'sans-serif'],
       },
       colors: {
         brand: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
+          50: '#e8f5ef',
+          100: '#c9e8db',
+          200: '#a3d9c1',
+          300: '#6ec4a0',
+          400: '#3aa87f',
+          500: '#0e7c56',
+          600: '#0b6a4a',
+          700: '#085640',
+          800: '#064334',
+          900: '#043128',
         },
-        desk: {
-          navy: '#0f172a',
-          slate: '#1e293b',
-          card: '#334155',
-        }
       }
     },
   },

@@ -1,44 +1,67 @@
-import { Menu, X } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { navigationItems } from '../../features/navigation/navigationItems';
-import { useAuth } from '../../auth/AuthContext';
-import { Role } from '../../../shared/constants/index';
+import type { Role } from '@prisma/client';
+import { navigationGroups, type NavigationGroup } from '../../features/navigation/navigationItems';
 
-export function Sidebar() {
+type SidebarProps = { activeId: string; onSelect: (id: string) => void; role: Role };
+
+function groupForRoleGroup(group: NavigationGroup, role: Role) {
+  return { ...group, items: group.items.filter((item) => item.roles.includes(role)) };
+}
+
+export function Sidebar({ activeId, onSelect, role }: SidebarProps) {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('cos_sidebar') === 'collapsed');
   const [open, setOpen] = useState(false);
 
-  const activeId = location.pathname.replace(/^\//, '').split('/')[0] || 'lobby';
-
-  const visibleItems = navigationItems.filter(
-    (item) => !item.adminOnly || user?.role === Role.ADMIN
-  );
-
-  const select = (id: string) => {
-    navigate(`/${id}`);
-    setOpen(false);
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('cos_sidebar', next ? 'collapsed' : 'expanded');
   };
+
+  const groups = navigationGroups.map((group) => groupForRoleGroup(group, role)).filter((group) => group.items.length > 0);
 
   return (
     <>
-      <button type="button" className="m-4 inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm lg:hidden" onClick={() => setOpen(true)}>
-        <Menu className="h-4 w-4" /> {t('navigation.menu')}
+      <button type="button" className="btn btn--ghost sidebar-toggle" onClick={() => setOpen(true)} aria-label={t('navigation.menu')}>
+        <PanelLeftOpen className="h-4 w-4" />
       </button>
-      {open && <button type="button" className="fixed inset-0 z-30 bg-slate-950/70 lg:hidden" aria-label={t('actions.close')} onClick={() => setOpen(false)} />}
-      <aside className={`fixed inset-y-0 start-0 z-40 w-72 border-e border-slate-800 bg-slate-900 p-4 transition-transform lg:static lg:block lg:w-64 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="mb-6 flex items-center justify-between lg:hidden"><span className="font-bold">{t('navigation.menu')}</span><button type="button" onClick={() => setOpen(false)} aria-label={t('actions.close')}><X className="h-5 w-5" /></button></div>
-        <nav aria-label={t('navigation.ariaLabel')} className="space-y-1">
-          {visibleItems.map(({ id, labelKey, icon: Icon }) => (
-            <button key={id} type="button" onClick={() => select(id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-semibold transition ${activeId === id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}`}>
-              <Icon className="h-5 w-5 shrink-0" aria-hidden="true" /> <span>{t(labelKey)}</span>
-            </button>
+      {open && <div className="sidebar-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
+      <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''} ${!open ? 'sidebar--hidden' : ''}`} aria-label={t('navigation.ariaLabel')}>
+        <div className="sidebar-top">
+          <div className="brand">
+            <span className="brand-logo">م</span>
+            <div className="brand-name">{t('appName')}</div>
+          </div>
+          <button type="button" className="icon-btn" onClick={() => setOpen(false)} aria-label={t('actions.close')}><X className="h-4 w-4" /></button>
+        </div>
+        <nav className="stack" style={{ gap: 18 }}>
+          {groups.map((group) => (
+            <div className="nav-group" key={group.labelKey}>
+              <div className="nav-group-title">{t(group.labelKey)}</div>
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`nav-item ${activeId === item.id ? 'nav-item--active' : ''}`}
+                  onClick={() => { onSelect(item.id); setOpen(false); }}
+                  aria-current={activeId === item.id ? 'page' : undefined}
+                >
+                  <item.icon className="nav-icon" aria-hidden="true" />
+                  <span>{t(item.labelKey)}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
+        <div className="sidebar-foot">
+          <button type="button" className="nav-item" onClick={toggleCollapsed} aria-label="toggle sidebar">
+            {collapsed ? <PanelLeftOpen className="nav-icon" aria-hidden="true" /> : <PanelLeftClose className="nav-icon" aria-hidden="true" />}
+            <span>{collapsed ? '' : t('actions.close')}</span>
+          </button>
+        </div>
       </aside>
     </>
   );

@@ -1,55 +1,69 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../auth/AuthContext';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
-import { DeskStationBadge } from './DeskStationBadge';
-import { StatusAlerts } from './StatusAlerts';
+import { ToastHost, notify } from '../ui/kit';
+import { navigationGroups } from '../../features/navigation/navigationItems';
+import { DashboardPage } from '../../features/dashboard/DashboardPage';
 import { ManagementPage } from '../../features/management/ManagementPage';
-import { UsersPage } from '../../features/management/UsersPage';
 import { SchedulingPage } from '../../features/scheduling/SchedulingPage';
 import { StudentsPage } from '../../features/students/StudentsPage';
 import { OperationsPage } from '../../features/operations/OperationsPage';
-import { ChangePasswordPage } from '../../auth/ChangePasswordPage';
-import { useAuth } from '../../auth/AuthContext';
-import { Role } from '../../../shared/constants/index';
-
-const ADMIN_ONLY_VIEWS = ['teachers', 'rooms', 'reports', 'users'];
 
 export function AppShell() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === Role.ADMIN;
-  const location = useLocation();
-  const currentId = location.pathname.replace(/^\//, '').split('/')[0] || 'lobby';
+  const { t } = useTranslation();
+  const { user, hasRole } = useAuth();
+  const [activeId, setActiveId] = useState('dashboard');
+  const [sessionId, setSessionId] = useState('');
 
-  if (!isAdmin && ADMIN_ONLY_VIEWS.includes(currentId)) {
-    return <Navigate to="/lobby" replace />;
-  }
+  const role = user?.role ?? 'ADMIN';
+
+  const allowedItems = useMemo(
+    () => navigationGroups.flatMap((group) => group.items).filter((item) => hasRole(...item.roles)),
+    [hasRole],
+  );
+  const currentId = allowedItems.some((item) => item.id === activeId) ? activeId : allowedItems[0]?.id ?? 'dashboard';
+  const currentLabel = allowedItems.find((item) => item.id === currentId)?.labelKey ?? 'navigation.dashboard';
+
+  const navigate = (id: string) => {
+    if (!allowedItems.some((item) => item.id === id)) {
+      notify(t('session.denied', 'لا تملك صلاحية الوصول لهذا القسم'), 'error');
+      return;
+    }
+    setActiveId(id);
+  };
+
+  const openLobbyForSession = (id: string) => {
+    setSessionId(id);
+    setActiveId('lobby');
+  };
+
+  const content = (() => {
+    switch (currentId) {
+      case 'teachers': return <ManagementPage mode="teachers" />;
+      case 'rooms': return <ManagementPage mode="rooms" />;
+      case 'sessions': return <SchedulingPage onCheckIn={openLobbyForSession} />;
+      case 'students': return <StudentsPage />;
+      case 'shift': return <OperationsPage mode="shift" />;
+      case 'reconciliation': return <OperationsPage mode="reconciliation" />;
+      case 'settlement': return <OperationsPage mode="settlement" />;
+      case 'reports': return <OperationsPage mode="reports" />;
+      case 'lobby': return <OperationsPage mode="lobby" selectedSessionId={sessionId} onSessionChange={setSessionId} />;
+      default: return <DashboardPage onNavigate={navigate} />;
+    }
+  })();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <Header />
-      <div className="mx-auto flex max-w-[1600px] lg:min-h-[calc(100vh-4rem)]">
-        <Sidebar />
-        <main className="min-w-0 flex-1 p-4 sm:p-6">
-          <div className="mb-4 xl:hidden"><DeskStationBadge /></div>
-          <div className="space-y-6">
-            <Routes>
-              <Route path="/" element={<Navigate to="/lobby" replace />} />
-              <Route path="/lobby" element={<><StatusAlerts /><OperationsPage mode="lobby" /></>} />
-              <Route path="/shift" element={<OperationsPage mode="shift" />} />
-              <Route path="/reconciliation" element={<OperationsPage mode="reconciliation" />} />
-              <Route path="/settlement" element={<OperationsPage mode="settlement" />} />
-              <Route path="/reports" element={<OperationsPage mode="reports" />} />
-              <Route path="/teachers" element={<ManagementPage mode="teachers" />} />
-              <Route path="/rooms" element={<ManagementPage mode="rooms" />} />
-              <Route path="/sessions" element={<SchedulingPage />} />
-              <Route path="/students" element={<StudentsPage />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/change-password" element={<ChangePasswordPage />} />
-              <Route path="*" element={<Navigate to="/lobby" replace />} />
-            </Routes>
-          </div>
+    <div className="app">
+      <Header activeLabel={t(currentLabel)} />
+      <div className="app-body">
+        <Sidebar activeId={currentId} onSelect={navigate} role={role} />
+        <main className="app-main" id="main">
+          {content}
         </main>
       </div>
+      <ToastHost />
     </div>
   );
 }

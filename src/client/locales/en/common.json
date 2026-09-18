@@ -1,9 +1,18 @@
 {
-  "appName": "Center System",
-  "appSubtitle": "Educational Center ERP",
+  "appName": "Madar",
+  "appSubtitle": "Center Management Platform",
+  "tagline": "Egyptian tutoring center management",
+  "center": "Main Center",
+  "roleName": { "admin": "Administrator", "receptionist": "Receptionist" },
   "navigation": {
     "ariaLabel": "Main navigation",
     "menu": "Menu",
+    "groups": {
+      "operation": "Operations",
+      "registries": "Registries",
+      "finance": "Finance & Splits"
+    },
+    "dashboard": "Dashboard",
     "lobby": "Fast Lobby Check-In",
     "sessions": "Sessions Timetable",
     "students": "Students Registry",
@@ -12,20 +21,26 @@
     "shiftRegister": "Shift Cash Drawer",
     "reconciliation": "Count Reconciliation",
     "settlement": "Teacher Settlement",
-    "reports": "Financial Reports",
-    "users": "User Management"
+    "reports": "Financial Reports"
   },
   "status": {
     "active": "Active",
     "scheduled": "Scheduled",
     "completed": "Completed",
+    "cancelled": "Cancelled",
     "open": "Open",
     "closed": "Closed",
-    "inactive": "Inactive",
-    "paid": "Paid",
-    "partial": "Partially paid",
-    "voided": "Voided",
-    "cancelled": "Cancelled"
+    "inactive": "Inactive"
+  },
+  "languages": {
+    "ar": "Arabic",
+    "en": "English"
+  },
+  "theme": {
+    "clean": "Madar look",
+    "pos": "POS look",
+    "dark": "Dark mode",
+    "toggle": "Switch theme"
   },
   "actions": {
     "close": "Close",
@@ -40,11 +55,11 @@
     "search": "Quick search by name or phone...",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "logout": "Sign out"
+    "signOut": "Sign out",
+    "backToSessions": "Back to sessions timetable",
+    "sessionsFromList": "Open check-in for this session"
   },
   "currency": "EGP",
-  "ui": { "loading": "Loading data...", "retry": "Retry", "adminOnly": "This action is available to administrators only.", "noResults": "No matching results.", "processing": "Processing...", "fatal": "An unexpected error occurred while rendering this page.", "fatalDetail": "Reload the page to continue." },
-  "pagination": { "prev": "Previous", "next": "Next" },
   "paymentMethods": {
     "cash": "Cash",
     "vodafoneCash": "Vodafone Cash",
@@ -53,32 +68,73 @@
   "desk": {
     "station": "Desk {{number}}",
     "location": "Main entrance",
-    "connected": "Connected",
-    "noActiveShift": "No active shift on this desk"
+    "connected": "Connected"
   },
   "alerts": {
     "title": "All systems operational",
-    "message": "Core services are connected. You can start check-ins from the lobby.",
-    "unavailable": "Database is currently unavailable.",
-    "unavailableMessage": "Failed to reach core services. Please retry shortly."
+    "message": "Core services are connected. You can start check-ins from the lobby."
   },
   "dashboard": {
-    "currentSection": "Current section",
-    "welcome": "Choose a section from the sidebar to manage center operations."
+    "currentSection": "Dashboard",
+    "welcome": "A live overview of the center right now.",
+    "metrics": {
+      "activeSessions": "Active sessions",
+      "studentsToday": "Students today",
+      "seatsLeft": "Seats available",
+      "shiftCash": "Shift cash",
+      "netRevenue": "Today's net revenue",
+      "teacherPayouts": "Teacher payouts"
+    },
+    "live": {
+      "title": "Live now",
+      "subtitle": "Real-time from the reception",
+      "openLobby": "Open check-in",
+      "next": {
+        "title": "Up next",
+        "empty": "No upcoming sessions."
+      }
+    },
+    "attention": {
+      "title": "Needs your attention",
+      "shiftClosed": { "title": "Shift not open", "desc": "The desk drawer is not open today. Check-ins need an active drawer." },
+      "openShift": "Open shift",
+      "soon": { "title": "Session starts within 30 min", "desc": "Get ready for the next session." },
+      "full": { "title": "Session fully booked", "desc": "The session room reached its capacity." },
+      "nothing": "Nothing needs attention right now."
+    }
+  },
+  "timeline": {
+    "groups": {
+      "now": "Now",
+      "upcoming": "Upcoming",
+      "completed": "Completed"
+    },
+    "summary": {
+      "all": "Total sessions",
+      "now": "Active now",
+      "today": "Upcoming today",
+      "done": "Completed"
+    },
+    "dateLabel": "Today's timetable",
+    "empty": "No sessions scheduled today.",
+    "checkInFromList": "Check-in",
+    "attend": "Expected",
+    "attended": "Checked in"
   },
   "user": {
-    "initial": "S"
+    "initial": "S",
+    "menu": "Your profile"
   },
   "auth": {
     "title": "Sign in",
     "subtitle": "Sign in to manage center operations",
+    "welcome": "Welcome to",
     "username": "Username",
     "password": "Password",
     "signIn": "Sign in",
     "signingIn": "Signing in...",
     "loading": "Loading...",
-    "invalidCredentials": "Invalid login credentials",
-    "serviceUnavailable": "Could not connect to the service. Check your connection and try again."
+    "invalidCredentials": "Invalid login credentials"
   },
   "management": {
     "sectionLabel": "Core management",
@@ -87,11 +143,10 @@
     "delete": "Delete",
     "save": "Save",
     "saving": "Saving...",
-    "actions": "Actions",
     "confirmDelete": "Delete this record?",
     "loadError": "Could not load the data.",
     "saveError": "Could not save the data.",
-    "deleteError": "Could not delete the data.", "deleteSuccess": "Deleted successfully.", "saveSuccess": "Saved successfully.", "emptyRooms": "No rooms have been added yet.", "emptyTeachers": "No teachers have been added yet.",
+    "deleteError": "Could not delete the data.",
     "rooms": { "title": "Room management", "name": "Room name", "capacity": "Capacity", "floor": "Floor", "noFloor": "No floor set" },
     "teachers": { "title": "Teacher registry", "name": "Teacher name", "phone": "Phone", "subject": "Subject", "fee": "Center fee per student", "assistant": "Assistant", "assistantPhone": "Assistant phone" }
   },
@@ -103,13 +158,7 @@
     "centerFee": "Center fee",
     "empty": "No sessions are scheduled yet.",
     "loadError": "Could not load the timetable.",
-    "saveError": "Could not save the session.", "permission": "Only administrators can add or edit sessions.",
-    "edit": "Edit session",
-    "cancel": "Cancel session",
-    "cancelConfirm": "Cancel this session?",
-    "cancelled": "Session cancelled.",
-    "saved": "Session saved.",
-    "uneditable": "Completed or locked sessions cannot be edited.",
+    "saveError": "Could not save the session.",
     "form": { "teacher": "Teacher", "room": "Room", "title": "Session title", "stage": "Academic stage", "start": "Starts at", "end": "Ends at", "price": "Session price", "fee": "Center fee per student" }
   },
   "students": {
@@ -124,104 +173,17 @@
     "confirmDelete": "Delete this student?",
     "loadError": "Could not load the student registry.",
     "saveError": "Could not save the student.",
-    "deleteError": "Could not delete the student.", "saving": "Saving student data...",
+    "deleteError": "Could not delete the student.",
     "form": { "name": "Student name", "studentPhone": "Student phone", "guardianPhone": "Guardian phone", "stage": "Academic stage", "school": "School type", "notes": "Notes" },
-    "history": "Attendance & payments history",
-    "historyEmpty": "No attendance sessions recorded for this student.",
-    "phoneError": "Use a valid Egyptian mobile number (010/011/012/015, 10 digits).",
-    "summaryTitle": "Student payment summary",
-    "totalPaid": "Total paid",
-    "totalOwed": "Total remaining due",
-    "sessionsCount": "Attendance count",
-    "pagination": "Page {{page}} of {{total}}",
     "school": { "general": "General", "languages": "Languages", "azhar": "Azhar" },
-    "table": { "code": "Code", "name": "Name", "phone": "Phone", "stage": "Stage", "school": "School", "actions": "Actions", "history": "History" }
+    "table": { "code": "Code", "name": "Name", "phone": "Phone", "stage": "Stage", "school": "School", "actions": "Actions" }
   },
   "operations": {
-    "loadError": "Could not load the data.", "saveError": "Could not save the operation.", "chooseSession": "Choose a session first.", "checkInSuccess": "Check-in and payment recorded.", "checkInError": "Could not record the check-in.", "permission": "You do not have permission to perform this action.", "loading": "Loading operations...", "auditEmpty": "No operations were recorded for this shift.",
-    "lobby": { "title": "Fast Lobby Check-In", "subtitle": "Attendance and payment", "empty": "No active or upcoming sessions.", "studentSearch": "Find a student", "searchPlaceholder": "Search by name, code, or phone...", "reference": "Transfer reference (optional)", "paymentMethod": "Payment method", "attendanceList": "Session attendance", "attendanceEmpty": "No check-ins recorded for this session yet.", "voidAction": "Void check-in", "voidConfirm": "Void this student's check-in?", "partialNotice": "Partially paid — remaining due on the student", "selected": "Selected session" },
-    "receipt": { "title": "Payment receipt", "subtitle": "Center System — payment collection", "session": "Session", "student": "Student", "method": "Payment method", "amount": "Amount paid", "change": "Change due", "remaining": "Remaining due", "time": "Time", "print": "Print receipt", "close": "Close receipt", "paidFully": "Fully paid" },
-    "shift": { "title": "Shift Cash Drawer", "subtitle": "Desk drawer control", "desk": "Desk name", "openingCash": "Opening cash", "actualCash": "Physical cash at close", "notes": "Closing notes", "category": "Expense category", "amount": "Amount", "description": "Description", "addExpense": "Record expense", "expectedCashInDrawer": "Expected cash", "totalCashCollected": "Cash collected", "totalTeacherCashPayouts": "Teacher payouts", "totalCashExpenses": "Cash expenses", "opened": "Shift opened.", "closed": "Shift closed.", "expenseSaved": "Expense recorded." },
-    "reconciliation": { "title": "Attendance Reconciliation", "subtitle": "Reception versus assistant count", "session": "Session", "lobbyCount": "Reception count", "assistantCount": "Assistant count", "headcount": "Approved headcount", "notes": "Resolution notes", "saved": "Reconciliation saved.", "confirmTitle": "Confirm reconciliation", "confirmBody": "The approved headcount will be locked to the session's final result." },
-    "settlement": { "title": "Teacher Settlement", "subtitle": "Pay out and close the session", "session": "Session", "price": "Session price", "centerFee": "Center fee", "payment": "Payout method", "recipient": "Recipient name", "saved": "Settlement completed.", "confirmTitle": "Confirm settlement", "confirmBody": "The payout will be recorded and the session locked permanently. It cannot be changed afterwards." },
-    "reports": { "title": "Financial Reports", "subtitle": "Daily summary and drawer audit", "load": "Load report", "totalAttendees": "Total attendees", "centerNetRevenue": "Center net revenue", "teacherPayouts": "Teacher payouts", "digitalCollections": "Digital collections", "shiftId": "Shift ID", "loadAudit": "View audit log", "shiftHistory": "Shift history", "desk": "Desk", "openedAt": "Opened at", "closedAt": "Closed at", "actualCash": "Actual cash", "cashVariance": "Variance", "receptionist": "Receptionist", "historyEmpty": "No closed shifts yet." },
-    "voucher": { "title": "Teacher Payout Voucher", "session": "Session", "teacher": "Teacher", "recipient": "Recipient", "totalRevenue": "Total revenue", "centerShare": "Center share", "teacherPayout": "Net payout", "method": "Payout method", "time": "Time", "print": "Print voucher", "close": "Close voucher" }
-  },
-  "audit": {
-    "SHIFT_OPENED": "Shift opened",
-    "ATTENDANCE_CHECKED_IN": "Check-in",
-    "ATTENDANCE_VOIDED": "Check-in voided",
-    "EXPENSE_RECORDED": "Expense recorded",
-    "SHIFT_CLOSED": "Shift closed",
-    "SESSION_RECONCILED": "Counts reconciled",
-    "TEACHER_PAYOUT": "Teacher payout",
-    "PASSWORD_CHANGED": "Password changed",
-    "USER_CREATED": "User created",
-    "USER_UPDATED": "User updated",
-    "USER_UPDATED_PASSWORD_RESET": "Password reset",
-    "USER_DEACTIVATED": "User deactivated"
-  },
-  "errors": {
-    "DUPLICATE_CHECK_IN": "This student is already checked in to this session.",
-    "SESSION_CAPACITY_REACHED": "This session has reached its capacity.",
-    "SHIFT_NOT_OPEN": "An active shift must be open first.",
-    "SHIFT_CLOSED": "The shift was already closed.",
-    "SHIFT_ALREADY_CLOSED": "The shift was already closed.",
-    "SESSION_LOCKED": "This session is completed and locked; it cannot be changed or settled twice.",
-    "PAYMENT_REFERENCE_REQUIRED": "A payment reference is required for digital payments.",
-    "SCHEDULE_CONFLICT": "Time conflicts with another session.",
-    "UNAUTHORIZED": "You must sign in first.",
-    "FORBIDDEN": "You do not have permission to perform this action.",
-    "AUDIT_ACCESS_DENIED": "You cannot view this shift audit log.",
-    "RECONCILIATION_REQUIRED": "The counts differ; resolution notes are required.",
-    "SESSION_NOT_FOUND": "Session not found.",
-    "STUDENT_NOT_FOUND": "Student not found.",
-    "ATTENDANCE_NOT_FOUND": "Attendance record not found.",
-    "ATTENDANCE_ALREADY_VOID": "This check-in has already been voided.",
-    "VOID_FORBIDDEN": "You can only void check-ins from an open shift you own.",
-    "STUDENT_IN_USE": "A student with attendance records cannot be deleted.",
-    "USERNAME_TAKEN": "This username is already taken.",
-    "INVALID_CURRENT_PASSWORD": "The current password is incorrect.",
-    "PASSWORD_SAME_AS_CURRENT": "The new password must differ from the current one.",
-    "SELF_DEACTIVATE": "You cannot deactivate your own account.",
-    "SELF_DELETE": "You cannot delete your own account.",
-    "SELF_ROLE_CHANGE": "You cannot change your own role.",
-    "USER_NOT_FOUND": "User not found.",
-    "DUPLICATE_RECORD": "A record with this unique value already exists.",
-    "INVALID_PHONE": "Use a valid Egyptian mobile number (010/011/012/015, 10 digits)."
-  },
-  "users": {
-    "sectionLabel": "Roles & accounts",
-    "title": "User Management",
-    "add": "Add user",
-    "edit": "Edit user",
-    "username": "Username",
-    "password": "Password",
-    "fullName": "Full name",
-    "role": "Role",
-    "phone": "Phone",
-    "language": "Language",
-    "active": "Account active",
-    "empty": "No users yet.",
-    "loadError": "Could not load the users.",
-    "saveError": "Could not save the user.",
-    "saveSuccess": "User saved successfully.",
-    "deleteSuccess": "Account deactivated.",
-    "deactivate": "Deactivate account",
-    "activate": "Re-activate account",
-    "resetPassword": "Reset password",
-    "confirmDelete": "Deactivate this account? The user will no longer be able to sign in.",
-    "roles": { "admin": "Administrator", "receptionist": "Receptionist" },
-    "selfHint": "You cannot deactivate, delete, or change the role of your own account."
-  },
-  "changePassword": {
-    "title": "Change password",
-    "current": "Current password",
-    "newPassword": "New password",
-    "confirm": "Confirm new password",
-    "mismatch": "The new passwords do not match.",
-    "saved": "Password changed successfully.",
-    "submit": "Update password",
-    "minLength": "Password must be at least 8 characters."
+    "loadError": "Could not load the data.", "saveError": "Could not save the operation.", "chooseSession": "Choose a session first.", "checkInSuccess": "Check-in and payment recorded.", "checkInError": "Could not record the check-in.",
+    "lobby": { "title": "Fast Lobby Check-In", "subtitle": "Attendance and payment", "empty": "No active or upcoming sessions.", "studentSearch": "Find a student", "searchPlaceholder": "Search by name, code, or phone...", "reference": "Transfer reference (optional)", "noSession": "Pick a session from the list to check in", "sessionSelected": "Checking in to", "successHint": "Student checked in. Continue with the next one or open another session" },
+    "shift": { "title": "Shift Cash Drawer", "subtitle": "Desk drawer control", "desk": "Desk name", "openingCash": "Opening cash", "actualCash": "Physical cash at close", "notes": "Closing notes", "category": "Expense category", "amount": "Amount", "description": "Description", "addExpense": "Record expense", "expectedCashInDrawer": "Expected cash", "totalCashCollected": "Cash collected", "totalTeacherCashPayouts": "Teacher payouts", "totalCashExpenses": "Cash expenses", "opened": "Shift opened.", "closed": "Shift closed.", "expenseSaved": "Expense recorded.", "trend": { "totalCashCollected": "Total cash collected", "digital": "Digital collections" } },
+    "reconciliation": { "title": "Attendance Reconciliation", "subtitle": "Reception versus assistant count", "session": "Session", "lobbyCount": "Reception count", "assistantCount": "Assistant count", "headcount": "Approved headcount", "notes": "Resolution notes", "saved": "Reconciliation saved." },
+    "settlement": { "title": "Teacher Settlement", "subtitle": "Pay out and close the session", "session": "Session", "price": "Session price", "centerFee": "Center fee", "payment": "Payout method", "recipient": "Recipient name", "saved": "Settlement completed." },
+    "reports": { "title": "Financial Reports", "subtitle": "Daily summary and drawer audit", "load": "Load report", "totalAttendees": "Total attendees", "centerNetRevenue": "Center net revenue", "teacherPayouts": "Teacher payouts", "digitalCollections": "Digital collections", "shiftId": "Shift ID", "loadAudit": "View audit log" }
   }
 }
