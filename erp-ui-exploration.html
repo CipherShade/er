@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="clean">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CenterOS — نظام إدارة السنتر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<style>
+/* ============================================================
+   THEME VARIABLES
+   ============================================================ */
+:root,[data-theme="clean"]{
+  --bg:#f6f5f2;--bg-subtle:#eeede9;
+  --surface:#ffffff;--surface-hover:#fafaf8;
+  --border:#e2e0dc;--border-strong:#d0cdc8;
+  --text:#20242a;--text-secondary:#6b7280;--text-muted:#9ca3af;
+  --primary:#0e7c56;--primary-hover:#0b6a4a;--primary-soft:#e8f5ef;--primary-text:#ffffff;
+  --accent:#b45309;--accent-soft:#fef3cd;
+  --danger:#c8362c;--danger-soft:#fde8e8;
+  --success:#0e7c56;--success-soft:#e8f5ef;
+  --warning:#d97706;--warning-soft:#fef3cd;
+  --shadow-xs:0 1px 2px rgba(16,24,40,.04);
+  --shadow-sm:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  --shadow-md:0 4px 8px -2px rgba(16,24,40,.06),0 2px 4px -2px rgba(16,24,40,.04);
+  --shadow-lg:0 12px 16px -4px rgba(16,24,40,.08),0 4px 6px -2px rgba(16,24,40,.03);
+  --radius:10px;--radius-sm:6px;--radius-lg:14px;--radius-pill:999px;
+  --sidebar-w:260px;--sidebar-collapsed:72px;--header-h:64px;
+  --font-body:'Cairo','Inter',system-ui,sans-serif;
+  --transition:150ms cubic-bezier(.4,0,.2,1);
+}
+[data-theme="pos"]{
+  --bg:#f0ede8;--bg-subtle:#e6e2db;
+  --surface:#ffffff;--surface-hover:#f7f5f1;
+  --border:#d5d0c8;--border-strong:#bbb5a8;
+  --text:#141414;--text-secondary:#555;--text-muted:#888;
+  --primary:#0a6e44;--primary-hover:#085c38;--primary-soft:#d8f0e0;--primary-text:#fff;
+  --accent:#a34600;--accent-soft:#fde8c8;
+  --danger:#b22d24;--danger-soft:#fcdcdc;
+  --success:#0a6e44;--success-soft:#d8f0e0;
+  --warning:#b45309;--warning-soft:#fde8c8;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:0 4px 8px rgba(0,0,0,.1);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.12);
+  --radius:6px;--radius-sm:4px;--radius-lg:10px;--radius-pill:999px;
+  --sidebar-w:240px;--sidebar-collapsed:68px;--header-h:60px;
+}
+[data-theme="dark"]{
+  --bg:#0c1210;--bg-subtle:#131c18;
+  --surface:#182420;--surface-hover:#1e2e28;
+  --border:#263630;--border-strong:#354840;
+  --text:#e4e8e6;--text-secondary:#90a8a0;--text-muted:#607068;
+  --primary:#22c584;--primary-hover:#18a86e;--primary-soft:rgba(34,197,132,.12);--primary-text:#0c1210;
+  --accent:#f59e0b;--accent-soft:rgba(245,158,11,.12);
+  --danger:#ef4444;--danger-soft:rgba(239,68,68,.12);
+  --success:#22c584;--success-soft:rgba(34,197,132,.12);
+  --warning:#f59e0b;--warning-soft:rgba(245,158,11,.12);
+  --shadow-xs:0 1px 2px rgba(0,0,0,.2);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.3);
+  --shadow-md:0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.5);
+  --radius:10px;--radius-sm:6px;--radius-lg:14px;--radius-pill:999px;
+  --sidebar-w:260px;--sidebar-collapsed:72px;--header-h:64px;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;scroll-behavior:smooth;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;transition:background var(--transition),color var(--transition);}
+a{color:var(--primary);text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:inherit;}
+input,select,textarea{font-family:inherit;font-size:inherit;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;background:var(--surface);color:var(--text);transition:border-color var(--transition),box-shadow var(--transition);width:100%;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);}
+table{width:100%;border-collapse:collapse;}
+th{text-align:start;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);padding:10px 12px;border-bottom:1px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:hover td{background:var(--surface-hover);}
+img,svg{display:block;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+
+/* ============================================================
+   LAYOUT SHELL
+   ============================================================ */
+.app-layout{display:flex;min-height:100vh;direction:inherit;}
+.sidebar{position:fixed;top:0;bottom:0;inset-inline-start:0;width:var(--sidebar-w);background:var(--surface);border-inline-start:1px solid var(--border);z-index:40;display:flex;flex-direction:column;transition:width var(--transition),transform var(--transition);overflow:hidden;}
+.sidebar.collapsed{width:var(--sidebar-collapsed);}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:16px 18px;height:var(--header-h);border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-logo .logo-mark{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--primary);display:flex;align-items:center;justify-content:center;color:var(--primary-text);font-weight:800;font-size:14px;flex-shrink:0;}
+.sidebar-logo .logo-text{font-weight:700;font-size:16px;white-space:nowrap;transition:opacity var(--transition);}
+.sidebar.collapsed .logo-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-group-title{opacity:0;width:0;overflow:hidden;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
+.nav-group{margin-bottom:16px;}
+.nav-group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding:4px 10px 6px;white-space:nowrap;transition:opacity var(--transition);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--text-secondary);font-weight:500;font-size:13px;cursor:pointer;transition:all var(--transition);white-space:nowrap;position:relative;}
+.nav-item:hover{background:var(--bg);color:var(--text);}
+.nav-item.active{background:var(--primary-soft);color:var(--primary);font-weight:600;}
+.nav-item svg{width:20px;height:20px;flex-shrink:0;}
+.nav-label{transition:opacity var(--transition);}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px;}
+.sidebar.collapsed .nav-item[title]:hover::after{content:attr(title);position:absolute;inset-inline-end:calc(100% + 8px);top:50%;transform:translateY(-50%);background:var(--text);color:var(--bg);padding:4px 10px;border-radius:var(--radius-sm);font-size:12px;white-space:nowrap;z-index:100;pointer-events:none;}
+
+/* Header */
+.app-main{flex:1;margin-inline-start:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-inline-start var(--transition);}
+.sidebar.collapsed ~ .app-main{margin-inline-start:var(--sidebar-collapsed);}
+.app-header{height:var(--header-h);display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:30;flex-shrink:0;}
+.header-right{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.header-left{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.breadcrumb{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.breadcrumb span{color:var(--text);font-weight:600;}
+.search-trigger{display:flex;align-items:center;gap:8px;padding:7px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text-muted);font-size:13px;cursor:pointer;transition:all var(--transition);min-width:220px;}
+.search-trigger:hover{border-color:var(--border-strong);background:var(--surface-hover);}
+.search-trigger kbd{font-size:11px;padding:1px 5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;color:var(--text-muted);margin-inline-start:auto;}
+.header-btn{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);transition:all var(--transition);position:relative;}
+.header-btn:hover{background:var(--bg);color:var(--text);}
+.header-btn .badge{position:absolute;top:4px;inset-inline-end:4px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;}
+.lang-btn{font-size:12px;font-weight:600;padding:4px 8px;border-radius:var(--radius-sm);color:var(--text-secondary);transition:all var(--transition);}
+.lang-btn:hover{background:var(--bg);color:var(--text);}
+.user-menu-wrap{position:relative;display:flex;}
+.user-menu{position:absolute;top:42px;inset-inline-end:0;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;display:none;z-index:70;animation:fadeIn .15s ease;}
+.user-menu.open{display:block;}
+.user-menu-head{padding:10px 12px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.user-menu-name{font-weight:700;font-size:13px;}
+.user-menu-role{font-size:12px;margin-top:6px;}
+.user-menu-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:pointer;transition:all var(--transition);}
+.user-menu-item:hover{background:var(--bg);color:var(--danger);}
+.user-menu-item svg{width:16px;height:16px;}
+
+/* Role badge */
+.role-badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:600;background:var(--bg);color:var(--text-secondary);border:1px solid var(--border);}
+.role-badge.admin{background:var(--primary-soft);color:var(--primary);border-color:transparent;}
+
+/* Login / role selection overlay */
+.login-overlay{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;}
+.login-overlay.show{display:flex;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:420px;padding:32px 28px;text-align:center;}
+.login-logo{width:56px;height:56px;margin-inline:auto;border-radius:var(--radius);background:var(--primary);color:var(--primary-text);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;box-shadow:var(--shadow-md);}
+.login-title{font-size:18px;font-weight:800;margin-top:16px;}
+.login-sub{color:var(--text-muted);font-size:13px;margin:6px 0 20px;}
+.login-demo{font-size:11px;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.login-demo svg{width:14px;height:14px;}
+.login-account{display:flex;align-items:center;gap:14px;text-align:start;width:100%;padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);cursor:pointer;transition:all var(--transition);margin-bottom:10px;}
+.login-account:hover{border-color:var(--primary);background:var(--primary-soft);}
+.login-account .acc-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);color:var(--primary-text);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0;}
+.login-account .acc-name{font-weight:700;font-size:14px;}
+.login-account .acc-sub{font-size:12px;color:var(--text-muted);margin-top:1px;}
+.login-account .acc-tag{margin-inline-start:auto;font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--radius-pill);background:var(--primary-soft);color:var(--primary);flex-shrink:0;}
+.login-account .acc-arrow{color:var(--text-muted);flex-shrink:0;display:flex;}
+
+/* Sessions timeline */
+.sess-summary{display:flex;gap:10px;margin-bottom:20px;}
+.sess-sum-item{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-xs);}
+.sess-sum-item strong{font-size:22px;font-weight:800;color:var(--primary);}
+.sess-sum-item span{font-size:13px;color:var(--text-secondary);}
+.tl-sec{margin-bottom:24px;}
+.tl-sec-title{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.tl-count{font-size:11px;font-weight:600;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-pill);padding:2px 8px;}
+.tl-item{display:grid;grid-template-columns:auto 22px 1fr auto;gap:12px;align-items:center;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow-xs);transition:border-color var(--transition),transform var(--transition);}
+.tl-item:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+.tl-time{text-align:center;min-width:54px;}
+.tl-start{font-weight:800;font-size:15px;color:var(--text);}
+.tl-end{font-size:11px;color:var(--text-muted);}
+.tl-rail{align-self:stretch;position:relative;display:flex;justify-content:center;align-items:flex-start;}
+.tl-rail::before{content:'';position:absolute;top:6px;bottom:6px;width:2px;background:var(--border);}
+.tl-dot{position:relative;z-index:1;margin-top:22px;width:12px;height:12px;border-radius:50%;background:var(--surface);box-shadow:0 0 0 4px var(--surface);}
+.tl-item.phase-now .tl-dot{border:3px solid var(--primary);}
+.tl-item.phase-next .tl-dot{border:3px solid var(--accent);}
+.tl-item.phase-done .tl-dot{border:3px solid var(--text-muted);}
+.tl-main{min-width:0;}
+.tl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.tl-head strong{font-size:15px;font-weight:700;}
+.tl-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);margin-top:2px;}
+.tl-meta svg{width:13px;height:13px;}
+.tl-meta .tl-num{font-weight:700;color:var(--text-secondary);}
+.tl-action{display:flex;}
+.pill-muted{background:var(--bg);color:var(--text-muted);border:1px solid var(--border);}
+@media(max-width:680px){
+  .sess-summary{flex-direction:column;}
+  .tl-item{grid-template-columns:auto 1fr;gap:8px;padding:12px;}
+  .tl-rail{display:none;}
+  .tl-time{text-align:start;min-width:0;display:flex;align-items:baseline;gap:6px;}
+  .tl-start{font-size:13px;}
+  .tl-action{grid-column:1 / -1;}
+  .tl-action .btn{width:100%;justify-content:center;}
+}
+
+/* Main Content */
+.screen-content{flex:1;padding:24px;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:22px;font-weight:700;}
+.page-subtitle{font-size:13px;color:var(--text-secondary);margin-top:2px;}
+.page-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-weight:600;font-size:13px;transition:all var(--transition);white-space:nowrap;}
+.btn-primary{background:var(--primary);color:var(--primary-text);box-shadow:var(--shadow-xs);}
+.btn-primary:hover{background:var(--primary-hover);box-shadow:var(--shadow-sm);}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--surface-hover);border-color:var(--border-strong);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{opacity:.9;}
+.btn-ghost{color:var(--text-secondary);}
+.btn-ghost:hover{background:var(--bg);color:var(--text);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-lg{padding:12px 24px;font-size:15px;}
+.btn svg{width:16px;height:16px;}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-xs);transition:box-shadow var(--transition),background var(--transition);}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:14px;font-weight:700;}
+.card-body{padding:16px;}
+
+/* Status Pill */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;}
+.pill-success{background:var(--success-soft);color:var(--success);}
+.pill-warning{background:var(--warning-soft);color:var(--warning);}
+.pill-danger{background:var(--danger-soft);color:var(--danger);}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* Grids */
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.grid-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+
+/* Metrics */
+.metric{padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-xs);}
+.metric-label{font-size:12px;color:var(--text-muted);font-weight:500;margin-bottom:4px;}
+.metric-value{font-size:20px;font-weight:700;line-height:1.2;}
+.metric-sub{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+
+/* Progress Bar */
+.progress{height:6px;background:var(--bg-subtle);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;background:var(--primary);transition:width .4s ease;}
+.progress-fill.warning{background:var(--warning);}
+.progress-fill.danger{background:var(--danger);}
+
+/* Session Pill */
+.session-pill{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.session-pill:hover{border-color:var(--border-strong);background:var(--surface-hover);}
+.session-pill.active{border-color:var(--primary);background:var(--primary-soft);color:var(--primary);}
+.session-pill .time{font-size:11px;color:var(--text-muted);font-weight:500;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text-muted);}
+.empty-state svg{width:48px;height:48px;margin:0 auto 12px;opacity:.4;}
+
+/* Sidebar toggle (hamburger) */
+.menu-toggle{display:none;}
+
+/* Mobile Backdrop */
+.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:35;opacity:0;transition:opacity var(--transition);}
+.backdrop.show{display:block;opacity:1;}
+
+/* ============================================================
+   DASHBOARD SPECIFICS
+   ============================================================ */
+.greeting{margin-bottom:24px;}
+.greeting h1{font-size:24px;font-weight:800;}
+.greeting p{color:var(--text-secondary);font-size:14px;margin-top:4px;}
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:24px;}
+.session-card{padding:16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow-xs);cursor:pointer;transition:all var(--transition);position:relative;overflow:hidden;}
+.session-card::before{content:'';position:absolute;top:0;inset-inline-end:0;width:4px;height:100%;border-radius:0 4px 4px 0;}
+.session-card[data-status="active"]::before{background:var(--primary);}
+.session-card[data-status="upcoming"]::before{background:var(--accent);}
+.session-card:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
+.session-card-top{display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;}
+.session-card h3{font-size:15px;font-weight:700;}
+.session-card .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--text-secondary);margin-bottom:10px;}
+.session-card .meta span{display:flex;align-items:center;gap:4px;}
+.session-card .headcount-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.session-card .headcount-nums{font-size:13px;font-weight:600;}
+.session-card .headcount-sub{font-size:11px;color:var(--text-muted);}
+
+.attention-list{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+.attention-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow-xs);transition:box-shadow var(--transition);}
+.attention-item:hover{box-shadow:var(--shadow-sm);}
+.attention-icon{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.attention-icon.warn{background:var(--warning-soft);color:var(--warning);}
+.attention-icon.danger{background:var(--danger-soft);color:var(--danger);}
+.attention-icon.info{background:var(--primary-soft);color:var(--primary);}
+.attention-text{flex:1;min-width:0;}
+.attention-text strong{font-size:13px;display:block;}
+.attention-text span{font-size:12px;color:var(--text-secondary);}
+
+/* ============================================================
+   LOBBY SPECIFICS
+   ============================================================ */
+.lobby-status-bar{display:flex;align-items:center;gap:12px;padding:12px 0;margin-bottom:16px;flex-wrap:wrap;}
+.lobby-status-bar .desk-info{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;}
+.lobby-status-bar .shift-status{margin-inline-start:auto;}
+.session-bar{display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin-bottom:20px;scrollbar-width:none;}
+.session-bar::-webkit-scrollbar{display:none;}
+.lobby-search-area{margin-bottom:20px;position:relative;}
+.lobby-search-area input{font-size:16px;padding:14px 16px;border:2px solid var(--border);border-radius:var(--radius);text-align:start;}
+.lobby-search-area input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);}
+.search-results{position:absolute;top:calc(100% + 4px);inset-inline-start:0;inset-inline-end:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:10;max-height:320px;overflow-y:auto;display:none;}
+.search-results.show{display:block;}
+.search-result-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background var(--transition);border-bottom:1px solid var(--border);}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-item:hover{background:var(--bg);}
+.search-result-item .avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.search-result-item .info{flex:1;}
+.search-result-item .name{font-weight:600;font-size:14px;}
+.search-result-item .detail{font-size:12px;color:var(--text-secondary);}
+
+.checkin-panel{display:none;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:20px;margin-top:16px;box-shadow:var(--shadow-sm);animation:slideUp .2s ease;}
+.checkin-panel.show{display:block;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.checkin-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.checkin-header .avatar{width:44px;height:44px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;}
+.checkin-info{flex:1;}
+.checkin-info h3{font-size:16px;font-weight:700;}
+.checkin-info p{font-size:13px;color:var(--text-secondary);}
+.checkin-session-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px;}
+.checkin-session-info div{padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);}
+.checkin-session-info .label{color:var(--text-muted);font-size:11px;display:block;margin-bottom:2px;}
+.payment-options{display:flex;gap:8px;margin:16px 0;}
+.payment-opt{flex:1;padding:12px;border:2px solid var(--border);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all var(--transition);font-weight:600;font-size:13px;}
+.payment-opt:hover{border-color:var(--border-strong);background:var(--surface-hover);}
+.payment-opt.selected{border-color:var(--primary);background:var(--primary-soft);color:var(--primary);}
+.payment-opt .pay-icon{font-size:20px;display:block;margin-bottom:4px;}
+
+/* Success overlay */
+.success-overlay{position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;animation:fadeIn .2s ease;}
+.success-overlay.show{display:flex;}
+.success-overlay .check-circle{width:64px;height:64px;border-radius:50%;background:var(--success-soft);color:var(--success);display:flex;align-items:center;justify-content:center;animation:scaleIn .3s ease;}
+.success-overlay .check-circle svg{width:32px;height:32px;}
+@keyframes scaleIn{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+.success-overlay h2{font-size:18px;font-weight:700;color:var(--success);}
+.success-overlay p{font-size:14px;color:var(--text-secondary);}
+
+/* Live headcount */
+.headcount-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;}
+.headcount-bar .label{font-size:13px;font-weight:600;}
+.headcount-bar .progress{flex:1;}
+.headcount-bar .nums{font-size:14px;font-weight:700;white-space:nowrap;}
+.headcount-bar .avail{font-size:12px;color:var(--text-muted);}
+
+/* ============================================================
+   STUDENTS TABLE / CARDS
+   ============================================================ */
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-row input{max-width:300px;}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);}
+.table-wrap table{min-width:700px;}
+.table-wrap td .name-cell{font-weight:600;}
+.table-wrap td .sub-cell{font-size:11px;color:var(--text-muted);}
+
+/* Student profile */
+.profile-header{display:flex;gap:20px;align-items:center;padding:20px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);margin-bottom:20px;box-shadow:var(--shadow-xs);}
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;flex-shrink:0;}
+.profile-info h2{font-size:20px;font-weight:700;}
+.profile-info .sub{color:var(--text-secondary);font-size:14px;}
+.profile-info .contact{display:flex;gap:16px;margin-top:8px;font-size:13px;color:var(--text-secondary);}
+.profile-stats{display:flex;gap:16px;margin-bottom:20px;}
+.profile-stat{flex:1;padding:16px;text-align:center;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);}
+.profile-stat .num{font-size:24px;font-weight:800;}
+.profile-stat .label{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.profile-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0;}
+.profile-tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all var(--transition);}
+.profile-tab:hover{color:var(--text);}
+.profile-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+
+/* ============================================================
+   SESSIONS / CALENDAR
+   ============================================================ */
+.sessions-toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.tab-bar{display:flex;gap:2px;background:var(--bg);border-radius:var(--radius-sm);padding:2px;}
+.tab-btn{padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;transition:all var(--transition);}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-xs);}
+.sessions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+
+/* ============================================================
+   TEACHERS / ROOMS
+   ============================================================ */
+.teacher-card{display:flex;gap:14px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);transition:box-shadow var(--transition);cursor:pointer;}
+.teacher-card:hover{box-shadow:var(--shadow-sm);}
+.teacher-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+.teacher-info{flex:1;}
+.teacher-info h3{font-size:14px;font-weight:700;}
+.teacher-info .sub{font-size:12px;color:var(--text-secondary);}
+.teacher-info .fee{font-size:12px;color:var(--primary);font-weight:600;margin-top:4px;}
+
+.room-card{padding:20px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);transition:box-shadow var(--transition);cursor:pointer;}
+.room-card:hover{box-shadow:var(--shadow-sm);}
+.room-card h3{font-size:16px;font-weight:700;margin-bottom:8px;}
+.room-card .cap-info{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;}
+.room-card .cap-info .pct{font-weight:700;color:var(--primary);}
+
+/* ============================================================
+   SHIFT REGISTER
+   ============================================================ */
+.shift-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.shift-section{padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);}
+.shift-section h3{font-size:14px;font-weight:700;margin-bottom:12px;}
+.shift-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.shift-row:last-child{border-bottom:none;}
+.shift-row .val{font-weight:700;}
+.shift-total{display:flex;justify-content:space-between;padding:12px 16px;background:var(--primary-soft);border-radius:var(--radius);margin-top:16px;font-weight:700;font-size:15px;}
+
+/* Shift close modal steps */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:modalIn .2s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:none;}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.modal-header h3{font-size:16px;font-weight:700;}
+.modal-close{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all var(--transition);}
+.modal-close:hover{background:var(--bg);color:var(--text);}
+.modal-body{padding:20px;}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+.step-indicator{display:flex;gap:4px;margin-bottom:20px;}
+.step-dot{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background var(--transition);}
+.step-dot.done{background:var(--primary);}
+.step-dot.current{background:var(--accent);}
+
+.step-content{min-height:120px;}
+.step-content .big-num{font-size:32px;font-weight:800;text-align:center;margin:16px 0;}
+.step-content .big-num.green{color:var(--success);}
+.step-content .big-num.red{color:var(--danger);}
+.step-content label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;}
+.step-content input[type="number"]{font-size:24px;font-weight:700;text-align:center;padding:12px;}
+
+/* ============================================================
+   RECONCILIATION
+   ============================================================ */
+.reconcile-card{max-width:500px;margin:0 auto;text-align:center;}
+.reconcile-counts{display:flex;align-items:center;justify-content:center;gap:24px;margin:24px 0;}
+.reconcile-count{text-align:center;}
+.reconcile-count .num{font-size:36px;font-weight:800;}
+.reconcile-count .label{font-size:13px;color:var(--text-secondary);margin-top:4px;}
+.reconcile-diff{font-size:18px;font-weight:700;padding:12px 20px;border-radius:var(--radius);margin:16px 0;}
+.reconcile-diff.mismatch{background:var(--danger-soft);color:var(--danger);}
+.reconcile-diff.match{background:var(--success-soft);color:var(--success);}
+
+/* ============================================================
+   SETTLEMENT
+   ============================================================ */
+.settlement-calc{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+.settlement-calc .calc-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.settlement-calc .calc-row .val{font-weight:700;}
+.settlement-calc .calc-total{display:flex;justify-content:space-between;padding:12px 0;font-size:16px;font-weight:700;color:var(--primary);}
+
+/* ============================================================
+   REPORTS
+   ============================================================ */
+.chart-card{padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);}
+.chart-card h3{font-size:14px;font-weight:700;margin-bottom:12px;}
+.chart-bar{display:flex;align-items:end;gap:8px;height:140px;padding-top:8px;}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.chart-col .bar{width:100%;border-radius:3px 3px 0 0;background:var(--primary);transition:height .4s ease;min-height:2px;}
+.chart-col .bar-label{font-size:10px;color:var(--text-muted);text-align:center;}
+.chart-col .bar-val{font-size:11px;font-weight:600;}
+.donut-wrap{display:flex;align-items:center;gap:20px;}
+.donut-legend{display:flex;flex-direction:column;gap:6px;}
+.donut-legend-item{display:flex;align-items:center;gap:8px;font-size:12px;}
+.donut-legend-item .swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* ============================================================
+   USERS TABLE
+   ============================================================ */
+.role-badge{padding:2px 8px;border-radius:var(--radius-pill);font-size:11px;font-weight:600;background:var(--primary-soft);color:var(--primary);}
+.role-badge.admin{background:var(--accent-soft);color:var(--accent);}
+
+/* ============================================================
+   COMMAND PALETTE
+   ============================================================ */
+.palette-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-start;justify-content:center;padding-top:20vh;}
+.palette-overlay.show{display:flex;}
+.palette{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:520px;animation:modalIn .15s ease;}
+.palette input{border:none;border-bottom:1px solid var(--border);border-radius:0;padding:14px 16px;font-size:15px;width:100%;background:transparent;}
+.palette input:focus{box-shadow:none;}
+.palette-results{max-height:320px;overflow-y:auto;padding:8px;}
+.palette-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;transition:background var(--transition);}
+.palette-item:hover,.palette-item.focused{background:var(--primary-soft);color:var(--primary);}
+.palette-item svg{width:18px;height:18px;opacity:.5;}
+.palette-item .shortcut{margin-inline-start:auto;font-size:11px;color:var(--text-muted);font-family:monospace;}
+
+/* ============================================================
+   STYLE SWITCHER FLOATING
+   ============================================================ */
+.style-float{position:fixed;bottom:16px;inset-inline-end:16px;z-index:80;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:4px;display:flex;gap:2px;}
+.style-opt{padding:5px 10px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;transition:all var(--transition);color:var(--text-secondary);white-space:nowrap;}
+.style-opt:hover{color:var(--text);background:var(--bg);}
+.style-opt.active{background:var(--primary);color:var(--primary-text);}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast-container{position:fixed;top:16px;inset-inline-end:16px;z-index:300;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 16px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;animation:toastIn .2s ease;display:flex;align-items:center;gap:8px;max-width:360px;}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+.toast.success{border-color:var(--success);color:var(--success);}
+.toast.error{border-color:var(--danger);color:var(--danger);}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:1200px){
+  .metrics-row{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:1024px){
+  .sidebar{transform:translateX(100%);}
+  html[dir="ltr"] .sidebar{transform:translateX(-100%);}
+  .sidebar{inset-inline-start:0;}
+  .sidebar.open{transform:translateX(0);}
+  .app-main{margin-inline-start:0 !important;}
+  .sidebar.collapsed ~ .app-main{margin-inline-start:0 !important;}
+  .menu-toggle{display:flex;}
+  .sidebar-logo{padding:16px;}
+  .shift-grid{grid-template-columns:1fr;}
+}
+@media(max-width:768px){
+  .screen-content{padding:16px;}
+  .page-header{flex-direction:column;align-items:flex-start;}
+  .page-title{font-size:18px;}
+  .metrics-row{grid-template-columns:1fr 1fr;}
+  .live-grid{grid-template-columns:1fr;}
+  .reconcile-counts{gap:12px;}
+  .reconcile-count .num{font-size:28px;}
+  .settlement-calc{grid-template-columns:1fr;}
+  .profile-header{flex-direction:column;text-align:center;}
+  .profile-avatar{width:56px;height:56px;font-size:20px;}
+  .profile-stats{flex-wrap:wrap;}
+  .profile-stat{min-width:calc(50% - 8px);}
+  .payment-options{flex-direction:column;}
+  .search-trigger{min-width:0;flex:1;}
+  .search-trigger span{display:none;}
+  .style-float{bottom:8px;inset-inline-end:8px;}
+  .grid-3,.grid-4{grid-template-columns:1fr;}
+  .sessions-grid{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .metrics-row{grid-template-columns:1fr;}
+  .metric-value{font-size:18px;}
+  .donut-wrap{flex-direction:column;}
+  .profile-tabs{overflow-x:auto;}
+}
+
+/* ============================================================
+   MISC
+   ============================================================ */
+.text-start{text-align:start;}
+.text-end{text-align:end;}
+.text-center{text-align:center;}
+.text-muted{color:var(--text-muted);}
+.text-primary{color:var(--primary);}
+.text-danger{color:var(--danger);}
+.text-success{color:var(--success);}
+.text-warning{color:var(--warning);}
+.mt-8{margin-top:8px;} .mt-12{margin-top:12px;} .mt-16{margin-top:16px;} .mt-24{margin-top:24px;}
+.mb-8{margin-bottom:8px;} .mb-12{margin-bottom:12px;} .mb-16{margin-bottom:16px;} .mb-24{margin-bottom:24px;}
+.flex{display:flex;} .flex-col{flex-direction:column;} .items-center{align-items:center;} .justify-between{justify-content:space-between;} .gap-8{gap:8px;} .gap-12{gap:12px;} .gap-16{gap:16px;}
+.w-full{width:100%;}
+.hidden{display:none !important;}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="app-layout" id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- Mobile backdrop -->
+  <div class="backdrop" id="backdrop" onclick="App.closeSidebar()"></div>
+
+  <!-- Main -->
+  <div class="app-main" id="app-main">
+    <header class="app-header" id="app-header"></header>
+    <div class="screen-content" id="screen-content"></div>
+  </div>
+</div>
+
+<!-- Login / role selection -->
+<div class="login-overlay" id="login-overlay"></div>
+
+<!-- Command palette -->
+<div class="palette-overlay" id="palette-overlay" onclick="if(event.target===this)App.closePalette()">
+  <div class="palette">
+    <input type="text" id="palette-input" placeholder="بحث..." oninput="App.filterPalette(this.value)">
+    <div class="palette-results" id="palette-results"></div>
+  </div>
+</div>
+
+<!-- Shift close modal -->
+<div class="modal-overlay" id="shift-modal" onclick="if(event.target===this)App.closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="shift-modal-title"></h3>
+      <button class="modal-close" onclick="App.closeModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="shift-modal-body"></div>
+    <div class="modal-footer" id="shift-modal-footer"></div>
+  </div>
+</div>
+
+<!-- Reconcile modal -->
+<div class="modal-overlay" id="reconcile-modal" onclick="if(event.target===this)App.closeReconcileModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="reconcile-modal-title"></h3>
+      <button class="modal-close" onclick="App.closeReconcileModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="reconcile-modal-body"></div>
+    <div class="modal-footer" id="reconcile-modal-footer"></div>
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="success-overlay">
+  <div class="check-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <h2 id="success-title">تم التسجيل</h2>
+  <p id="success-detail"></p>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Style float -->
+<div class="style-float" id="style-float"></div>
+
+<script>
+/* ================================================================
+   ICONS (inline SVG)
+   ================================================================ */
+const I={
+dashboard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+lobby:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+sessions:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+students:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+teachers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>',
+rooms:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="13" x2="9" y2="13.01"/><line x1="9" y1="17" x2="9" y2="17.01"/></svg>',
+shift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
+reconcile:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+settle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+reports:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="7" r="3"/><line x1="19" y1="8" x2="19" y2="14"/></svg>',
+search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.574 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+filter:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+import:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+};
+
+/* ================================================================
+   MOCK DATA
+   ================================================================ */
+const STUDENTS=[
+  {id:1,name:'أحمد محمد علي',nameEn:'Ahmed Mohamed Ali',phone:'01123456789',guardian:'01098765432',grade:'ثالثة ثانوي',gradeEn:'3rd Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:32,attended:29},
+  {id:2,name:'محمد محمود حسن',nameEn:'Mohamed Mahmoud Hassan',phone:'01023456789',guardian:'01187654321',grade:'ثالثة ثانوي',gradeEn:'3rd Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:30,attended:26},
+  {id:3,name:'يوسف أحمد سيد',nameEn:'Yousef Ahmed Said',phone:'01156789012',guardian:'01076543210',grade:'ثانية ثانوي',gradeEn:'2nd Secondary',status:'active',last:'أمس',lastEn:'Yesterday',sessions:28,attended:25},
+  {id:4,name:'عمر خالد عبدالله',nameEn:'Omar Khalid Abdullah',phone:'01012345678',guardian:'01198765432',grade:'ثالثة ثانوي',gradeEn:'3rd Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:34,attended:30},
+  {id:5,name:'مريم أحمد فتحي',nameEn:'Mariam Ahmed Fathy',phone:'01134567890',guardian:'01065432109',grade:'أولى ثانوي',gradeEn:'1st Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:20,attended:18},
+  {id:6,name:'سيف محمد طارق',nameEn:'Seif Mohamed Tarek',phone:'01087654321',guardian:'01154321098',grade:'ثالثة ثانوي',gradeEn:'3rd Secondary',status:'active',last:'3 أيام',lastEn:'3 days ago',sessions:25,attended:20},
+  {id:7,name:'ندى حسني إبراهيم',nameEn:'Nada Hosny Ibrahim',phone:'01167890123',guardian:'01043210987',grade:'ثانية ثانوي',gradeEn:'2nd Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:22,attended:21},
+  {id:8,name:'كريم أشرف محمود',nameEn:'Karim Ashraf Mahmoud',phone:'01098765432',guardian:'01132109876',grade:'أولى ثانوي',gradeEn:'1st Secondary',status:'active',last:'أمس',lastEn:'Yesterday',sessions:18,attended:15},
+  {id:9,name:'سلمى طارق عبد الرحمن',nameEn:'Salma Tarek Abdel Rahman',phone:'01145678901',guardian:'01021098765',grade:'ثالثة ثانوي',gradeEn:'3rd Secondary',status:'inactive',last:'منذ أسبوع',lastEn:'1 week ago',sessions:10,attended:6},
+  {id:10,name:'ملك مصطفى عادل',nameEn:'Malak Mostafa Adel',phone:'01034567890',guardian:'01110987654',grade:'أولى ثانوي',gradeEn:'1st Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:26,attended:24},
+  {id:11,name:'زياد وائل سمير',nameEn:'Ziad Wael Samir',phone:'01156789012',guardian:'01009876543',grade:'ثالثة ثانوي',gradeEn:'3rd Secondary',status:'active',last:'اليوم',lastEn:'Today',sessions:29,attended:27},
+  {id:12,name:'حبيبة عمرو رجب',nameEn:'Habiba Amr Ragab',phone:'01067890123',guardian:'01198765431',grade:'ثانية ثانوي',gradeEn:'2nd Secondary',status:'active',last:'أمس',lastEn:'Yesterday',sessions:21,attended:19},
+];
+
+const TEACHERS=[
+  {id:1,name:'أحمد محمد',nameEn:'Ahmed Mohamed',subject:'رياضيات',subjectEn:'Math',phone:'01012345678',fee:25,upcoming:6,color:'#0e7c56'},
+  {id:2,name:'محمد خالد',nameEn:'Mohamed Khalid',subject:'فيزياء',subjectEn:'Physics',phone:'01098765432',fee:25,upcoming:4,color:'#2563eb'},
+  {id:3,name:'محمود حسن',nameEn:'Mahmoud Hassan',subject:'كيمياء',subjectEn:'Chemistry',phone:'01122334455',fee:25,upcoming:3,color:'#7c3aed'},
+  {id:4,name:'سارة أحمد',nameEn:'Sara Ahmed',subject:'لغة عربية',subjectEn:'Arabic',phone:'01055556666',fee:20,upcoming:5,color:'#d97706'},
+  {id:5,name:'مصطفى عبدالرحمن',nameEn:'Mostafa Abdel Rahman',subject:'لغة إنجليزية',subjectEn:'English',phone:'01177889900',fee:20,upcoming:4,color:'#0891b2'},
+];
+
+const SESSIONS=[
+  {id:1,subject:'رياضيات',subjectEn:'Math',teacherId:1,roomId:3,start:'6:00',end:'7:30',price:55,capacity:50,checked:42,status:'active'},
+  {id:2,subject:'فيزياء',subjectEn:'Physics',teacherId:2,roomId:1,start:'6:00',end:'7:30',price:60,capacity:40,checked:30,status:'active'},
+  {id:3,subject:'لغة عربية',subjectEn:'Arabic',teacherId:4,roomId:2,start:'6:30',end:'8:00',price:45,capacity:45,checked:22,status:'active'},
+  {id:4,subject:'لغة إنجليزية',subjectEn:'English',teacherId:5,roomId:4,start:'7:00',end:'8:30',price:50,capacity:35,checked:12,status:'upcoming'},
+  {id:5,subject:'كيمياء',subjectEn:'Chemistry',teacherId:3,roomId:2,start:'7:30',end:'9:00',price:50,capacity:45,checked:0,status:'upcoming'},
+];
+
+const ROOMS=[
+  {id:1,name:'قاعة 1',nameEn:'Room 1',capacity:40,current:30,subject:'فيزياء',subjectEn:'Physics'},
+  {id:2,name:'قاعة 2',nameEn:'Room 2',capacity:45,current:22,subject:'لغة عربية',subjectEn:'Arabic'},
+  {id:3,name:'قاعة 3',nameEn:'Room 3',capacity:50,current:42,subject:'رياضيات',subjectEn:'Math'},
+  {id:4,name:'قاعة 4',nameEn:'Room 4',capacity:35,current:12,subject:'لغة إنجليزية',subjectEn:'English'},
+];
+
+const USERS=[
+  {id:1,name:'محمد أحمد',nameEn:'Mohamed Ahmed',username:'mohamed',role:'admin',roleEn:'Admin',phone:'01012345678',status:'active'},
+  {id:2,name:'فاطمة علي',nameEn:'Fatma Ali',username:'fatma',role:'receptionist',roleEn:'Receptionist',phone:'01123456789',status:'active'},
+  {id:3,name:'نور حسن',nameEn:'Nour Hassan',username:'nour',role:'receptionist',roleEn:'Receptionist',phone:'01098765432',status:'active'},
+  {id:4,name:'عمر سعيد',nameEn:'Omar Said',username:'omar',role:'admin',roleEn:'Admin',phone:'01187654321',status:'inactive'},
+];
+
+const ROLES={
+  admin:{name:'محمد أحمد',nameEn:'Mohamed Ahmed',role:'admin'},
+  receptionist:{name:'فاطمة علي',nameEn:'Fatma Ali',role:'receptionist'},
+};
+
+const PERMS={
+  admin:['dashboard','lobby','sessions','students','teachers','rooms','shift','reconcile','settle','reports','users'],
+  receptionist:['dashboard','lobby','sessions','students','teachers','rooms'],
+};
+
+const COMPLETED=[
+  {id:11,subject:'رياضيات',subjectEn:'Math',teacherId:1,roomId:3,start:'5:00',end:'6:00',price:55,capacity:50,checked:49,status:'completed'},
+  {id:12,subject:'لغة عربية',subjectEn:'Arabic',teacherId:4,roomId:2,start:'3:30',end:'5:00',price:45,capacity:45,checked:42,status:'completed'},
+];
+
+/* ================================================================
+   i18n
+   ================================================================ */
+const LANG={
+ar:{
+  brand:'CenterOS',logo:'مركز',
+  nav_home:'الرئيسية',nav_dashboard:'لوحة التحكم',
+  nav_ops:'العمليات',nav_lobby:'الاستقبال',nav_sessions:'الحصص',nav_students:'الطلاب',
+  nav_mgmt:'الإدارة',nav_teachers:'المدرسين',nav_rooms:'القاعات',
+  nav_fin:'المالية',nav_shift:'الوردية',nav_reconcile:'المطابقة',nav_settle:'التصفية',
+  nav_reports:'التقارير',nav_users:'المستخدمين',
+  greeting:'صباح الخير، محمد',greeting_sub:'إليك ملخص تشغيل السنتر اليوم.',
+  revenue:'الإيرادات اليوم',students_today:'الطلاب اليوم',sessions_today:'الحصص اليوم','teacher_due':'مستحقات المدرسين',
+  live_ops:'العمليات الآن',active:'جارية',upcoming:'قريبة',view_lobby:'فتح الاستقبال',
+  attention:'يحتاج انتباهك',
+  att1_title:'فرق حضور في حصة الرياضيات',att1_sub:'الاستقبال: 58 | القاعة: 60',att1_action:'مراجعة',
+  att2_title:'وردية مكتب 2 تحتاج إغلاق',att2_action:'فتح الوردية',
+  att3_title:'حصة تبدأ خلال 15 دقيقة',att3_action:'فتح الحصة',
+  desk:'مكتب 2',operator:'محمد أحمد',shift_open:'الوردية مفتوحة',
+  lobby_title:'الاستقبال',session_pill_time:'illusional',
+  search_placeholder:'ابحث باسم الطالب أو رقم الهاتف أو كود الطالب...',
+  check_in:'تأكيد التسجيل',price_label:'سعر الحصة:',session_info:'تفاصيل الحصة',
+  teacher_label:'المدرس:',room_label:'القاعة:',subject_label:'المادة:',
+  pay_cash:'نقدي',pay_vodafone:'Vodafone Cash',pay_instapay:'InstaPay',
+  success_checkin:'تم تسجيل الطالب',students_title:'الطلاب',add_student:'إضافة طالب',
+  import_btn:'استيراد',filter_btn:'تصفية',search_students:'ابحث عن طالب...',
+  th_name:'الطالب',th_phone:'الهاتف',th_guardian:'ولي الأمر',th_grade:'الصف',th_last:'آخر حضور',th_status:'الحالة',th_actions:'إجراءات',
+  profile_overview:'نظرة عامة',profile_attendance:'الحضور',profile_payments:'المدفوعات',profile_subjects:'المواد',
+  total_sessions:'إجمالي الحصص',attendance_rate:'نسبة الحضور',last_att:'آخر حضور',
+  sessions_title:'الحصص',today:'اليوم',week:'الأسبوع',day:'يوم',
+  teacher_col:'المدرس',room_col:'القاعة',time_col:'الوقت',headcount_col:'الحضور',status_col:'الحالة',
+  teachers_title:'المدرسين',fee_per_student:'حق السنتر',sessions_count:'الحصص القادمة',
+  rooms_title:'القاعات',capacity:'السعة',available:'متاح',
+  shift_title:'الوردية الحالية',shift_start:'بدأت',opening_balance:'رصيد البداية',
+  collections:'التحصيلات',cash_collections:'النقدي',vodafone_collections:'فودافون كاش',instapay_collections:'إنستاباي',
+  cash_movement:'حركة النقدية',collections_label:'تحصيلات',teacher_payouts_label:'مستحقات مدرسين',
+  expenses_label:'مصروفات',expected_label:'المتوقع',close_shift:'إغلاق الوردية',
+  step_expected:'الرصيد المتوقع',step_actual:'النقدية الفعلية',step_diff:'الفرق',step_reason:'سبب الفرق',step_confirm:'تأكيد الإغلاق',
+  close_confirm:'تأكيد إغلاق الوردية',step_next:'التالي',step_back:'رجوع',
+  reconcile_title:'مطابقة الحضور',reconcile_lobby:'الاستقبال',reconcile_hall:'القاعة',reconcile_diff:'الفرق',
+  start_review:'بدء المراجعة',approve_reconcile:'اعتماد المطابقة',
+  settle_title:'التصفية المالية',settle_teacher:'المدرس',settle_students:'الطلاب',settle_price:'سعر الحصة',
+  settle_gross:'الإيراد الإجمالي',settle_center:'حق السنتر',settle_payout:'مستحقات المدرس',
+  settle_status:'جاهزة للتصفية',settle_confirm:'تأكيد التصفية',
+  reports_title:'التقارير',revenue_chart:'الإيرادات',attendance_chart:'الحضور',payout_chart:'المدفوعات',
+  sessions_chart:'الحصص',payment_chart:'الوسائط',
+  users_title:'المستخدمين',th_user_name:'الاسم',th_username:'اسم المستخدم',th_role:'الدور',th_user_phone:'الهاتف',th_user_status:'الحالة',th_user_actions:'إجراءات',
+  edit:'تعديل',reset_pass:'إعادة تعيين كلمة المرور',disable:'تعطيل',
+  active_label:'نشط',inactive_label:'معطل',
+  month_mon:'يناير',month_feb:'فبراير',month_mar:'مارس',month_apr:'أبريل',month_may:'مايو',month_jun:'يونيو',
+  cancel:'إلغاء',save:'حفظ',close:'إغلاق',
+  role_admin:'مدير',role_reception:'استقبال',
+  login_title:'اختر حسابك',login_sub:'سجّل الدخول للمتابعة إلى النظام',
+  login_full_access:'صلاحية كاملة على النظام',login_reception_desc:'استقبال الطلاب والتحصيل فقط',
+  demo_hint:'وضع تجريبي — جميع البيانات افتراضية',
+  logout:'تسجيل الخروج',no_access:'لا تملك صلاحية للوصول لهذه الصفحة',
+  good_morning:'صباح الخير',in_center_now:'في السنتر الآن',seats_left:'سعة متبقية',
+  sess_now:'الآن',sess_next:'قادمة',sess_done:'منتهية',sess_completed:'منتهية',
+  sess_checkin:'تسجيل حضور',sess_open:'فتح',sess_calendar:'التقويم',sess_new:'حصة جديدة',
+},
+en:{
+  brand:'CenterOS',logo:'Center',
+  nav_home:'Home',nav_dashboard:'Dashboard',
+  nav_ops:'Operations',nav_lobby:'Lobby',nav_sessions:'Sessions',nav_students:'Students',
+  nav_mgmt:'Management',nav_teachers:'Teachers',nav_rooms:'Rooms',
+  nav_fin:'Finance',nav_shift:'Shift Register',nav_reconcile:'Reconciliation',nav_settle:'Settlement',
+  nav_reports:'Reports',nav_users:'Users',
+  greeting:'Good morning, Mohamed',greeting_sub:'Here\'s your center\'s operational summary.',
+  revenue:'Today\'s Revenue',students_today:'Students Today',sessions_today:'Sessions Today','teacher_due':'Teacher Payouts',
+  live_ops:'Live Now',active:'Active',upcoming:'Upcoming',view_lobby:'Open Lobby',
+  attention:'Needs Your Attention',
+  att1_title:'Attendance mismatch in Math session',att1_sub:'Lobby: 58 | Hall: 60',att1_action:'Review',
+  att2_title:'Desk 2 shift needs closing',att2_action:'Open Shift',
+  att3_title:'Session starts in 15 minutes',att3_action:'Open Session',
+  desk:'Desk 2',operator:'Mohamed Ahmed',shift_open:'Shift Open',
+  lobby_title:'Reception',
+  search_placeholder:'Search by student name, phone, or code...',
+  check_in:'Confirm Check-in',price_label:'Session Price:',session_info:'Session Details',
+  teacher_label:'Teacher:',room_label:'Room:',subject_label:'Subject:',
+  pay_cash:'Cash',pay_vodafone:'Vodafone Cash',pay_instapay:'InstaPay',
+  success_checkin:'Student Checked In',students_title:'Students',add_student:'Add Student',
+  import_btn:'Import',filter_btn:'Filter',search_students:'Search students...',
+  th_name:'Student',th_phone:'Phone',th_guardian:'Guardian',th_grade:'Grade',th_last:'Last Visit',th_status:'Status',th_actions:'Actions',
+  profile_overview:'Overview',profile_attendance:'Attendance',profile_payments:'Payments',profile_subjects:'Subjects',
+  total_sessions:'Total Sessions',attendance_rate:'Attendance Rate',last_att:'Last Visit',
+  sessions_title:'Sessions',today:'Today',week:'Week',day:'Day',
+  teacher_col:'Teacher',room_col:'Room',time_col:'Time',headcount_col:'Attendance',status_col:'Status',
+  teachers_title:'Teachers',fee_per_student:'Center Fee',sessions_count:'Upcoming Sessions',
+  rooms_title:'Rooms',capacity:'Capacity',available:'Available',
+  shift_title:'Current Shift',shift_start:'Started',opening_balance:'Opening Balance',
+  collections:'Collections',cash_collections:'Cash',vodafone_collections:'Vodafone Cash',instapay_collections:'InstaPay',
+  cash_movement:'Cash Movement',collections_label:'Collections',teacher_payouts_label:'Teacher Payouts',
+  expenses_label:'Expenses',expected_label:'Expected',close_shift:'Close Shift',
+  step_expected:'Expected Balance',step_actual:'Actual Cash',step_diff:'Difference',step_reason:'Reason',step_confirm:'Confirm Close',
+  close_confirm:'Confirm Shift Close',step_next:'Next',step_back:'Back',
+  reconcile_title:'Reconciliation',reconcile_lobby:'Lobby',reconcile_hall:'Hall',reconcile_diff:'Difference',
+  start_review:'Start Review',approve_reconcile:'Approve Reconciliation',
+  settle_title:'Financial Settlement',settle_teacher:'Teacher',settle_students:'Students',settle_price:'Session Price',
+  settle_gross:'Gross Revenue',settle_center:'Center Share',settle_payout:'Teacher Payout',
+  settle_status:'Ready for Settlement',settle_confirm:'Confirm Settlement',
+  reports_title:'Reports',revenue_chart:'Revenue',attendance_chart:'Attendance',payout_chart:'Payouts',
+  sessions_chart:'Sessions',payment_chart:'Payment Methods',
+  users_title:'Users',th_user_name:'Name',th_username:'Username',th_role:'Role',th_user_phone:'Phone',th_user_status:'Status',th_user_actions:'Actions',
+  edit:'Edit',reset_pass:'Reset Password',disable:'Disable',
+  active_label:'Active',inactive_label:'Inactive',
+  month_mon:'Jan',month_feb:'Feb',month_mar:'Mar',month_apr:'Apr',month_may:'May',month_jun:'Jun',
+  cancel:'Cancel',save:'Save',close:'Close',
+  role_admin:'Admin',role_reception:'Reception',
+  login_title:'Choose your account',login_sub:'Sign in to continue to the system',
+  login_full_access:'Full system access',login_reception_desc:'Student reception & collection only',
+  demo_hint:'Demo mode — all data is mock',
+  logout:'Log out',no_access:'You do not have permission to access this page',
+  good_morning:'Good morning',in_center_now:'In Center Now',seats_left:'Seats Left',
+  sess_now:'Now',sess_next:'Upcoming',sess_done:'Completed',sess_completed:'Completed',
+  sess_checkin:'Check in',sess_open:'Open',sess_calendar:'Calendar',sess_new:'New Session',
+},
+};
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const S={
+  screen:'dashboard',
+  lang: localStorage.getItem('cos_lang')||'ar',
+  theme: localStorage.getItem('cos_theme')||'clean',
+  collapsed: localStorage.getItem('cos_collapsed')==='1',
+  role: localStorage.getItem('cos_role'),
+  activeSession: 1,
+  selectedStudent: null,
+  selectedPayment: null,
+  shiftStep: 0,
+  shiftActual: 2500,
+  shiftReason: '',
+  reconcileApproved: false,
+  settled: {1:false,2:false,3:false,4:false,5:false},
+  sidebarOpen: false,
+};
+
+const fmtEGP = n => new Intl.NumberFormat('en-US').format(n)+' ج.م';
+const fmtEGPEn = n => 'EGP '+new Intl.NumberFormat('en-US').format(n);
+
+function t(key){return (LANG[S.lang]||LANG.ar)[key]||key;}
+function fegp(n){return S.lang==='en'?fmtEGPEn(n):fmtEGP(n);}
+function tField(o){return S.lang==='en'?o.nameEn||o.name||o.subjectEn||o.subject:o.name||o.subject;}
+function tName(o){return S.lang==='en'?o.nameEn||o.name:o.name;}
+function tGrade(o){return S.lang==='en'?o.gradeEn||o.grade:o.grade;}
+function tSubject(o){return S.lang==='en'?o.subjectEn||o.subject:o.subject;}
+function tRoom(o){return S.lang==='en'?o.nameEn||o.name:o.name;}
+function tLast(o){return S.lang==='en'?o.lastEn||o.last:o.last;}
+function tRole(o){return S.lang==='en'?o.roleEn||o.role:o.role;}
+function tStatus(o){return (S.lang==='en'?(o.status==='active'?'Active':'Inactive'):(o.status==='active'?'نشط':'معطل'));}
+
+/* ================================================================
+   SVG ICON HELPER
+   ================================================================ */
+function icon(name,size=20){return `<span style="display:inline-flex;width:${size}px;height:${size}px;">${I[name]||''}</span>`;}
+
+/* ================================================================
+   APP
+   ================================================================ */
+const App={
+  canAccess(screen){
+    return (PERMS[S.role||'admin']||PERMS.admin).includes(screen);
+  },
+  curUser(){
+    return ROLES[S.role||'admin']||ROLES.admin;
+  },
+  roleLabel(){
+    return t((App.curUser().role==='admin')?'role_admin':'role_reception');
+  },
+  go(screen){
+    if(!App.canAccess(screen)){
+      App.toast(t('no_access'),'error');
+      return;
+    }
+    S.screen=screen;
+    S.selectedStudent=null;
+    App.renderSidebar();
+    App.renderScreen();
+    App.closeSidebar();
+    document.getElementById('user-menu')?.classList.remove('open');
+  },
+
+  renderSidebar(){
+    const nav=[
+      {group:t('nav_home'),items:[{id:'dashboard',icon:'dashboard',label:t('nav_dashboard')}]},
+      {group:t('nav_ops'),items:[
+        {id:'lobby',icon:'lobby',label:t('nav_lobby')},
+        {id:'sessions',icon:'sessions',label:t('nav_sessions')},
+        {id:'students',icon:'students',label:t('nav_students')},
+      ]},
+      {group:t('nav_mgmt'),items:[
+        {id:'teachers',icon:'teachers',label:t('nav_teachers')},
+        {id:'rooms',icon:'rooms',label:t('nav_rooms')},
+      ]},
+      {group:t('nav_fin'),items:[
+        {id:'shift',icon:'shift',label:t('nav_shift')},
+        {id:'reconcile',icon:'reconcile',label:t('nav_reconcile')},
+        {id:'settle',icon:'settle',label:t('nav_settle')},
+      ]},
+      {group:t('nav_reports'),items:[{id:'reports',icon:'reports',label:t('nav_reports')}]},
+      {group:t('nav_users'),items:[{id:'users',icon:'users',label:t('nav_users')}]},
+    ].map(g=>({group:g.group,items:g.items.filter(it=>App.canAccess(it.id))})).filter(g=>g.items.length);
+    let html=`<div class="sidebar-logo">
+      <div class="logo-mark">${t('logo').charAt(0)}</div>
+      <div class="logo-text">${t('brand')}</div>
+    </div><nav class="sidebar-nav">`;
+    nav.forEach(g=>{
+      html+=`<div class="nav-group"><div class="nav-group-title">${g.group}</div>`;
+      g.items.forEach(it=>{
+        const cls=S.screen===it.id?'nav-item active':'nav-item';
+        html+=`<div class="${cls}" title="${it.label}" onclick="App.go('${it.id}')">${icon(it.icon)}<span class="nav-label">${it.label}</span></div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</nav>`;
+    document.getElementById('sidebar').innerHTML=html;
+    document.getElementById('sidebar').classList.toggle('collapsed',S.collapsed);
+  },
+
+  renderHeader(){
+    const titles={dashboard:t('nav_dashboard'),lobby:t('lobby_title'),sessions:t('sessions_title'),students:t('students_title'),teachers:t('teachers_title'),rooms:t('rooms_title'),shift:t('shift_title'),reconcile:t('reconcile_title'),settle:t('settle_title'),reports:t('reports_title'),users:t('users_title')};
+    const u=App.curUser();
+    const letter=(S.lang==='en'?u.nameEn:u.name).charAt(0);
+    let html=`
+    <div class="header-right">
+      <button class="header-btn menu-toggle" onclick="App.toggleSidebar()">${icon('menu')}</button>
+      <div class="breadcrumb">${t('brand')} / <span>${titles[S.screen]||S.screen}</span></div>
+    </div>
+    <div class="header-left">
+      <button class="search-trigger" onclick="App.openPalette()">
+        ${icon('search',16)}
+        <span>${t('search_placeholder').substring(0,30)}...</span>
+        <kbd>⌘K</kbd>
+      </button>
+      <button class="header-btn" onclick="App.toast('${S.lang==='en'?'No new notifications':'لا توجد إشعارات جديدة'}')">${icon('bell')}<span class="badge"></span></button>
+      <button class="lang-btn" onclick="App.toggleLang()">${S.lang==='ar'?'EN':'عربي'}</button>
+      <div class="user-menu-wrap" id="user-menu-wrap">
+        <div class="user-avatar" onclick="App.toggleUserMenu()" title="${t('logout')}">${letter}</div>
+        <div class="user-menu" id="user-menu">
+          <div class="user-menu-head">
+            <div class="user-menu-name">${S.lang==='en'?u.nameEn:u.name}</div>
+            <div class="user-menu-role"><span class="role-badge ${u.role==='admin'?'admin':''}">${t(u.role==='admin'?'role_admin':'role_reception')}</span></div>
+          </div>
+          <div class="user-menu-item" onclick="App.logout()">${icon('logout',16)} ${t('logout')}</div>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById('app-header').innerHTML=html;
+  },
+
+  renderScreen(){
+    const el=document.getElementById('screen-content');
+    el.style.animation='none';
+    el.offsetHeight;
+    el.style.animation='fadeIn .2s ease';
+    switch(S.screen){
+      case 'dashboard': App.renderDashboard(el); break;
+      case 'lobby': App.renderLobby(el); break;
+      case 'sessions': App.renderSessions(el); break;
+      case 'students': App.renderStudents(el); break;
+      case 'teachers': App.renderTeachers(el); break;
+      case 'rooms': App.renderRooms(el); break;
+      case 'shift': App.renderShift(el); break;
+      case 'reconcile': App.renderReconcile(el); break;
+      case 'settle': App.renderSettle(el); break;
+      case 'reports': App.renderReports(el); break;
+      case 'users': App.renderUsers(el); break;
+      default: el.innerHTML='<div class="empty-state"><h2>Coming soon</h2></div>';
+    }
+    App.renderHeader();
+  },
+
+  /* ----- Dashboard ----- */
+  renderDashboard(el){
+    const activeSessions=SESSIONS.filter(s=>s.status==='active');
+    const u=App.curUser();
+    const isRec=S.role==='receptionist';
+    const checkedSum=activeSessions.reduce((a,s)=>a+s.checked,0);
+    const capSum=activeSessions.reduce((a,s)=>a+s.capacity,0);
+    const seatsLeft=capSum-checkedSum;
+    const greetingName=S.lang==='en'?u.nameEn:u.name;
+    const metrics=isRec?`
+      <div class="metric"><div class="metric-label">${t('students_today')}</div><div class="metric-value">284</div><div class="metric-sub">+8% ${S.lang==='en'?'vs yesterday':'من أمس'}</div></div>
+      <div class="metric"><div class="metric-label">${t('sessions_today')}</div><div class="metric-value">18</div><div class="metric-sub">${activeSessions.length} ${S.lang==='en'?'active now':'نشطة الآن'}</div></div>
+      <div class="metric"><div class="metric-label">${t('in_center_now')}</div><div class="metric-value">${checkedSum}</div><div class="metric-sub">${S.lang==='en'?'students checked in today':'طالب مسجّل اليوم'}</div></div>
+      <div class="metric"><div class="metric-label">${t('seats_left')}</div><div class="metric-value">${seatsLeft}</div><div class="metric-sub">${S.lang==='en'?'across live sessions':'بين الحصص الجارية'}</div></div>`
+    :`
+      <div class="metric"><div class="metric-label">${t('revenue')}</div><div class="metric-value">${fegp(12450)}</div><div class="metric-sub">+12% ${S.lang==='en'?'vs yesterday':'من أمس'}</div></div>
+      <div class="metric"><div class="metric-label">${t('students_today')}</div><div class="metric-value">284</div><div class="metric-sub">+8% ${S.lang==='en'?'vs yesterday':'من أمس'}</div></div>
+      <div class="metric"><div class="metric-label">${t('sessions_today')}</div><div class="metric-value">18</div><div class="metric-sub">${activeSessions.length} ${S.lang==='en'?'active now':'نشطة الآن'}</div></div>
+      <div class="metric"><div class="metric-label">${t('teacher_due')}</div><div class="metric-value">${fegp(7200)}</div><div class="metric-sub">4 ${S.lang==='en'?'pending':'بانتظار التصفية'}</div></div>`;
+    const att1Action=isRec
+      ?`<button class="btn btn-sm btn-secondary" onclick="App.go('lobby')">${t('view_lobby')}</button>`
+      :`<button class="btn btn-sm btn-secondary" onclick="App.go('reconcile')">${t('att1_action')}</button>`;
+    el.innerHTML=`
+    <div class="greeting">
+      <h1>${t('good_morning')}، ${greetingName}</h1>
+      <p>${t('greeting_sub')}</p>
+    </div>
+    <div class="metrics-row">${metrics}</div>
+    <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">${t('live_ops')}</h2>
+    <div class="live-grid">
+      ${SESSIONS.map(s=>{
+        const teacher=TEACHERS.find(t=>t.id===s.teacherId);
+        const room=ROOMS.find(r=>r.id===s.roomId);
+        const pct=Math.round(s.checked/s.capacity*100);
+        return `<div class="session-card" data-status="${s.status}" onclick="App.go('lobby')">
+          <div class="session-card-top">
+            <h3>${tSubject(s)}</h3>
+            <span class="pill ${s.status==='active'?'pill-success':'pill-warning'}"><span class="dot"></span>${s.status==='active'?t('active'):t('upcoming')}</span>
+          </div>
+          <div class="meta">
+            <span>${icon('teachers',14)} ${tName(teacher)}</span>
+            <span>${icon('rooms',14)} ${tRoom(room)}</span>
+            <span>${icon('clock',14)} ${s.start} — ${s.end}</span>
+          </div>
+          <div class="headcount-row">
+            <div><span class="headcount-nums">${s.checked} / ${s.capacity}</span><div class="progress" style="width:120px;margin-top:6px;"><div class="progress-fill ${pct>90?'warning':''}" style="width:${pct}%"></div></div></div>
+            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();App.go('lobby')">${t('view_lobby')}</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">${t('attention')}</h2>
+    <div class="attention-list">
+      <div class="attention-item">
+        <div class="attention-icon warn">${icon('alert',20)}</div>
+        <div class="attention-text"><strong>${t('att1_title')}</strong><span>${t('att1_sub')}</span></div>
+        ${att1Action}
+      </div>
+      ${isRec?'':`<div class="attention-item">
+        <div class="attention-icon danger">${icon('shift',20)}</div>
+        <div class="attention-text"><strong>${t('att2_title')}</strong></div>
+        <button class="btn btn-sm btn-secondary" onclick="App.go('shift')">${t('att2_action')}</button>
+      </div>`}
+      <div class="attention-item">
+        <div class="attention-icon info">${icon('clock',20)}</div>
+        <div class="attention-text"><strong>${t('att3_title')}</strong></div>
+        <button class="btn btn-sm btn-secondary" onclick="App.go('sessions')">${t('att3_action')}</button>
+      </div>
+    </div>`;
+  },
+
+  /* ----- Lobby ----- */
+  renderLobby(el){
+    const session=SESSIONS.find(s=>s.id===S.activeSession);
+    const teacher=TEACHERS.find(t=>t.id===session.teacherId);
+    const room=ROOMS.find(r=>r.id===session.roomId);
+    const pct=Math.round(session.checked/session.capacity*100);
+    const avail=session.capacity-session.checked;
+
+    el.innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">${t('lobby_title')}</h1></div></div>
+    <div class="lobby-status-bar">
+      <div class="desk-info">${icon('user',16)} <strong>${t('desk')}</strong> — ${t('operator')}</div>
+      <span class="pill pill-success shift-status"><span class="dot"></span>${t('shift_open')}</span>
+    </div>
+    <div class="session-bar" id="session-bar">
+      ${SESSIONS.map(s=>{
+        const tch=TEACHERS.find(x=>x.id===s.teacherId);
+        return `<div class="session-pill ${s.id===S.activeSession?'active':''}" onclick="App.selectSession(${s.id})">
+          ${tSubject(s)} <span class="time">${s.start}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="headcount-bar">
+      <span class="label">${icon('users',16)} ${S.lang==='en'?'Attendance':'الحضور'}</span>
+      <div class="progress" style="flex:1;"><div class="progress-fill ${pct>90?'warning':''}" style="width:${pct}%"></div></div>
+      <span class="nums">${session.checked} / ${session.capacity}</span>
+      <span class="avail">${avail} ${S.lang==='en'?'seats available':'مقعد متاح'}</span>
+    </div>
+    <div class="lobby-search-area">
+      <input type="text" id="lobby-search" placeholder="${t('search_placeholder')}" oninput="App.searchStudent(this.value)" autocomplete="off">
+      <div class="search-results" id="search-results"></div>
+    </div>
+    <div class="checkin-panel" id="checkin-panel"></div>`;
+    setTimeout(()=>{const inp=document.getElementById('lobby-search');if(inp)inp.focus();},100);
+  },
+
+  selectSession(id){
+    S.activeSession=id;
+    App.renderScreen();
+  },
+
+  searchStudent(query){
+    const results=document.getElementById('search-results');
+    if(!query||query.length<1){results.classList.remove('show');return;}
+    const nq=query.replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').toLowerCase();
+    const matches=STUDENTS.filter(s=>{
+      const nm=s.name.replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').toLowerCase();
+      return nm.includes(nq)||s.phone.includes(query)||s.id===parseInt(query);
+    });
+    if(matches.length===0){results.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">${S.lang==='en'?'No results found':'لا توجد نتائج'}</div>`;results.classList.add('show');return;}
+    results.innerHTML=matches.map(s=>`
+      <div class="search-result-item" onclick="App.selectStudent(${s.id})">
+        <div class="avatar">${s.name.charAt(0)}</div>
+        <div class="info"><div class="name">${tName(s)}</div><div class="detail">${s.phone} · ${tGrade(s)}</div></div>
+      </div>
+    `).join('');
+    results.classList.add('show');
+  },
+
+  selectStudent(id){
+    S.selectedStudent=STUDENTS.find(s=>s.id===id);
+    S.selectedPayment=null;
+    const session=SESSIONS.find(s=>s.id===S.activeSession);
+    const teacher=TEACHERS.find(t=>t.id===session.teacherId);
+    const room=ROOMS.find(r=>r.id===session.roomId);
+    const panel=document.getElementById('checkin-panel');
+    document.getElementById('search-results').classList.remove('show');
+    panel.innerHTML=`
+      <div class="checkin-header">
+        <div class="avatar">${S.selectedStudent.name.charAt(0)}</div>
+        <div class="checkin-info">
+          <h3>${tName(S.selectedStudent)}</h3>
+          <p>${S.selectedStudent.phone} · ${tGrade(S.selectedStudent)}</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('checkin-panel').classList.remove('show')">${icon('x',16)}</button>
+      </div>
+      <div class="checkin-session-info">
+        <div><span class="label">${t('subject_label')}</span>${tSubject(session)}</div>
+        <div><span class="label">${t('teacher_label')}</span>${tName(teacher)}</div>
+        <div><span class="label">${t('room_label')}</span>${tRoom(room)}</div>
+        <div><span class="label">${t('price_label')}</span><strong style="color:var(--primary);font-size:15px;">${fegp(session.price)}</strong></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-secondary);">${S.lang==='en'?'Payment Method':'طريقة الدفع'}</div>
+      <div class="payment-options">
+        <div class="payment-opt" onclick="App.selectPayment('cash')"><span class="pay-icon">💵</span>${t('pay_cash')}<br><kbd style="font-size:10px;color:var(--text-muted);">1</kbd></div>
+        <div class="payment-opt" onclick="App.selectPayment('vodafone')"><span class="pay-icon">📱</span>${t('pay_vodafone')}<br><kbd style="font-size:10px;color:var(--text-muted);">2</kbd></div>
+        <div class="payment-opt" onclick="App.selectPayment('instapay')"><span class="pay-icon">⚡</span>${t('pay_instapay')}<br><kbd style="font-size:10px;color:var(--text-muted);">3</kbd></div>
+      </div>
+      <button class="btn btn-primary btn-lg w-full mt-12" id="checkin-btn" onclick="App.confirmCheckin()" style="justify-content:center;">${t('check_in')}</button>`;
+    panel.classList.add('show');
+  },
+
+  selectPayment(type){
+    S.selectedPayment=type;
+    document.querySelectorAll('.payment-opt').forEach((el,i)=>{
+      el.classList.toggle('selected',['cash','vodafone','instapay'][i]===type);
+    });
+  },
+
+  confirmCheckin(){
+    if(!S.selectedPayment){App.toast(S.lang==='en'?'Select payment method':'اختر طريقة الدفع','error');return;}
+    const session=SESSIONS.find(s=>s.id===S.activeSession);
+    session.checked++;
+    const names={cash:t('pay_cash'),vodafone:t('pay_vodafone'),instapay:t('pay_instapay')};
+    document.getElementById('success-title').textContent=t('success_checkin');
+    document.getElementById('success-detail').textContent=`${tName(S.selectedStudent)} · ${fegp(session.price)} · ${names[S.selectedPayment]}`;
+    document.getElementById('success-overlay').classList.add('show');
+    setTimeout(()=>{
+      document.getElementById('success-overlay').classList.remove('show');
+      S.selectedStudent=null;S.selectedPayment=null;
+      App.renderScreen();
+    },1200);
+  },
+
+  /* ----- Sessions ----- */
+  renderSessions(el){
+    const dateStr=S.lang==='en'
+      ?new Date().toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long'})
+      :new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long'});
+    const now=SESSIONS.filter(s=>s.status==='active');
+    const next=SESSIONS.filter(s=>s.status==='upcoming');
+    const done=COMPLETED;
+    const canManage=App.canAccess('users');
+    const row=s=>{
+      const isDone=s.status==='completed';
+      const teacher=TEACHERS.find(x=>x.id===s.teacherId);
+      const room=ROOMS.find(r=>r.id===s.roomId);
+      const pct=Math.round(s.checked/s.capacity*100);
+      const phase=isDone?'done':(s.status==='upcoming'?'next':'now');
+      const pill=isDone?'pill-muted':(s.status==='active'?'pill-success':'pill-warning');
+      const btn=isDone?'':(s.status==='upcoming'
+        ?`<button class="btn btn-sm btn-secondary" onclick="App.openSessionFromList(${s.id})">${icon('clock',14)} ${t('sess_open')}</button>`
+        :`<button class="btn btn-sm btn-primary" onclick="App.openSessionFromList(${s.id})">${icon('lobby',14)} ${t('sess_checkin')}</button>`);
+      return `<div class="tl-item phase-${phase}">
+        <div class="tl-time"><div class="tl-start">${s.start}</div><div class="tl-end">${s.end}</div></div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-main">
+          <div class="tl-head"><strong>${tSubject(s)}</strong><span class="pill ${pill}"><span class="dot"></span>${isDone?t('sess_completed'):(s.status==='active'?t('active'):t('upcoming'))}</span></div>
+          <div class="tl-meta">${icon('teachers',13)} ${tName(teacher)} · ${icon('rooms',13)} ${tRoom(room)}<span class="tl-num">${s.checked}/${s.capacity}</span></div>
+          <div class="progress" style="max-width:280px;margin-top:6px;"><div class="progress-fill ${pct>90?'warning':''}" style="width:${pct}%"></div></div>
+        </div>
+        <div class="tl-action">${btn}</div>
+      </div>`;
+    };
+    const section=(title,list)=>list.length?`
+      <div class="tl-sec"><div class="tl-sec-title">${title}<span class="tl-count">${list.length}</span></div>
+      <div class="timeline">${list.map(row).join('')}</div></div>`:'';
+    el.innerHTML=`
+    <div class="page-header">
+      <div><h1 class="page-title">${t('sessions_title')}</h1><p class="page-subtitle">${dateStr}</p></div>
+      <div class="page-actions">
+        <button class="btn btn-secondary" onclick="App.toast('${S.lang==='en'?'Calendar view coming soon':'عرض التقويم قريباً'}')">${icon('sessions',16)} ${t('sess_calendar')}</button>
+        ${canManage?`<button class="btn btn-primary" onclick="App.toast('${S.lang==='en'?'New session form coming soon':'نموذج حصة جديدة قريباً'}')">${icon('plus',16)} ${t('sess_new')}</button>`:''}
+      </div>
+    </div>
+    <div class="sess-summary">
+      <div class="sess-sum-item"><strong>${now.length}</strong><span>${t('active')}</span></div>
+      <div class="sess-sum-item"><strong>${next.length}</strong><span>${t('upcoming')}</span></div>
+      <div class="sess-sum-item"><strong>${done.length}</strong><span>${t('sess_completed')}</span></div>
+    </div>
+    ${section(`${t('sess_now')}`,now)}
+    ${section(t('sess_next'),next)}
+    ${section(t('sess_done'),done)}
+    `;
+  },
+
+  openSessionFromList(id){
+    S.activeSession=id;
+    App.go('lobby');
+  },
+
+  /* ----- Students ----- */
+  renderStudents(el){
+    if(S.selectedStudent){App.renderStudentProfile(el);return;}
+    el.innerHTML=`
+    <div class="page-header">
+      <div><h1 class="page-title">${t('students_title')}</h1><p class="page-subtitle">${STUDENTS.length} ${S.lang==='en'?'students':'طالب مسجل'}</p></div>
+      <div class="page-actions">
+        <button class="btn btn-secondary">${icon('filter',16)} ${t('filter_btn')}</button>
+        <button class="btn btn-secondary">${icon('import',16)} ${t('import_btn')}</button>
+        <button class="btn btn-primary">${icon('plus',16)} ${t('add_student')}</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <input type="text" placeholder="${t('search_students')}" style="max-width:300px;" oninput="App.filterStudents(this.value)" id="students-search">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>${t('th_name')}</th><th>${t('th_phone')}</th><th>${t('th_guardian')}</th><th>${t('th_grade')}</th><th>${t('th_last')}</th><th>${t('th_status')}</th>
+        </tr></thead>
+        <tbody id="students-tbody">
+          ${STUDENTS.map(s=>`
+            <tr style="cursor:pointer;" onclick="App.viewStudent(${s.id})">
+              <td><div class="name-cell">${tName(s)}</div></td>
+              <td>${s.phone}</td>
+              <td>${s.guardian}</td>
+              <td>${tGrade(s)}</td>
+              <td>${tLast(s)}</td>
+              <td><span class="pill ${s.status==='active'?'pill-success':'pill-danger'}"><span class="dot"></span>${tStatus(s)}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  },
+
+  filterStudents(query){
+    const nq=query.toLowerCase();
+    const rows=document.querySelectorAll('#students-tbody tr');
+    rows.forEach((r,i)=>{r.style.display=STUDENTS[i].name.includes(nq)||STUDENTS[i].phone.includes(nq)?'':'none';});
+  },
+
+  viewStudent(id){
+    S.selectedStudent=STUDENTS.find(s=>s.id===id);
+    App.renderScreen();
+  },
+
+  /* ----- Student Profile ----- */
+  renderStudentProfile(el){
+    const s=S.selectedStudent;
+    const attended=s.attended;
+    const rate=Math.round(attended/s.sessions*100);
+    el.innerHTML=`
+    <div class="page-header">
+      <button class="btn btn-ghost" onclick="S.selectedStudent=null;App.renderScreen();">← ${S.lang==='en'?'Back to Students':'العودة للطلاب'}</button>
+    </div>
+    <div class="profile-header">
+      <div class="profile-avatar">${s.name.charAt(0)}</div>
+      <div class="profile-info">
+        <h2>${tName(s)}</h2>
+        <div class="sub">${tGrade(s)} · <span class="pill ${s.status==='active'?'pill-success':'pill-danger'}"><span class="dot"></span>${tStatus(s)}</span></div>
+        <div class="contact">
+          <span>${icon('phone',14)} ${s.phone}</span>
+          <span>${icon('user',14)} ${t('th_guardian')}: ${s.guardian}</span>
+        </div>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="num">${s.sessions}</div><div class="label">${t('total_sessions')}</div></div>
+      <div class="profile-stat"><div class="num">${rate}%</div><div class="label">${t('attendance_rate')}</div></div>
+      <div class="profile-stat"><div class="num">${tLast(s)}</div><div class="label">${t('last_att')}</div></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="profile-tab active">${t('profile_overview')}</div>
+      <div class="profile-tab">${t('profile_attendance')}</div>
+      <div class="profile-tab">${t('profile_payments')}</div>
+    </div>
+    <div class="card"><div class="card-body">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">${t('profile_attendance')}</h3>
+      <div style="display:flex;gap:4px;align-items:end;height:60px;">
+        ${Array.from({length:30},(_,i)=>{
+          const h=Math.random()>.15?1:0;
+          return `<div style="flex:1;border-radius:2px;min-height:4px;height:${h?'100%':'20%'};background:${h?'var(--primary)':'var(--border)'};opacity:${h?.8:.3};" title="${S.lang==='en'?'Present':'حضر'}"></div>`;
+        }).join('')}
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">${S.lang==='en'?'Last 30 sessions':'آخر 30 حصة'}</p>
+    </div></div>`;
+  },
+
+  /* ----- Teachers ----- */
+  renderTeachers(el){
+    el.innerHTML=`
+    <div class="page-header">
+      <div><h1 class="page-title">${t('teachers_title')}</h1><p class="page-subtitle">${TEACHERS.length} ${S.lang==='en'?'teachers':'مدرّس'}</p></div>
+      <div class="page-actions"><button class="btn btn-primary">${icon('plus',16)} ${S.lang==='en'?'Add Teacher':'إضافة مدرس'}</button></div>
+    </div>
+    <div class="grid-auto">
+      ${TEACHERS.map(teacher=>`
+        <div class="teacher-card">
+          <div class="teacher-avatar" style="background:${teacher.color}20;color:${teacher.color};">${teacher.name.charAt(0)}</div>
+          <div class="teacher-info">
+            <h3>${tName(teacher)}</h3>
+            <div class="sub">${tSubject(teacher)} · ${teacher.phone}</div>
+            <div class="fee">${t('fee_per_student')}: ${fegp(teacher.fee)} / ${S.lang==='en'?'student':'طالب'}</div>
+            <div style="margin-top:6px;">${icon('clock',14)} ${teacher.upcoming} ${t('sessions_count')}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  },
+
+  /* ----- Rooms ----- */
+  renderRooms(el){
+    el.innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">${t('rooms_title')}</h1></div></div>
+    <div class="grid-2">
+      ${ROOMS.map(r=>{
+        const pct=Math.round(r.current/r.capacity*100);
+        return `<div class="room-card">
+          <h3>${tRoom(r)}</h3>
+          <div class="cap-info"><span>${t('capacity')}: ${r.capacity}</span><span class="pct">${pct}%</span></div>
+          <div class="progress" style="margin-bottom:8px;"><div class="progress-fill ${pct>90?'warning':''}" style="width:${pct}%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span>${r.current} ${S.lang==='en'?'in session':'بالقاعة'}</span>
+            <span style="color:var(--primary);font-weight:600;">${tSubject(r)}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  },
+
+  /* ----- Shift ----- */
+  renderShift(el){
+    el.innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">${t('shift_title')}</h1><p class="page-subtitle">${t('desk')} — ${t('operator')}</p></div>
+    <div class="page-actions"><span class="pill pill-success"><span class="dot"></span>${t('shift_open')}</span></div></div>
+    <div class="card mb-16">
+      <div class="card-body" style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+        <div>${icon('clock',14)} ${t('shift_start')}: 12:04 ${S.lang==='en'?'PM':'م'}</div>
+        <div>${icon('user',14)} ${t('operator')}: محمد أحمد</div>
+        <div>${icon('rooms',14)} ${t('desk')}: 2</div>
+      </div>
+    </div>
+    <div class="shift-grid">
+      <div class="shift-section">
+        <h3>${t('collections')}</h3>
+        <div class="shift-row"><span>${icon('note',14)} ${t('cash_collections')}</span><span class="val">${fegp(3450)}</span></div>
+        <div class="shift-row"><span>📱 ${t('vodafone_collections')}</span><span class="val">${fegp(1200)}</span></div>
+        <div class="shift-row"><span>⚡ ${t('instapay_collections')}</span><span class="val">${fegp(850)}</span></div>
+        <div class="shift-row" style="border-top:2px solid var(--border);font-weight:700;"><span>${S.lang==='en'?'Total Collections':'الإجمالي'}</span><span class="val">${fegp(5500)}</span></div>
+      </div>
+      <div class="shift-section">
+        <h3>${t('cash_movement')}</h3>
+        <div class="shift-row"><span>${t('opening_balance')}</span><span class="val">${fegp(500)}</span></div>
+        <div class="shift-row"><span style="color:var(--success);">+ ${t('collections_label')}</span><span class="val" style="color:var(--success);">+${fegp(3450)}</span></div>
+        <div class="shift-row"><span style="color:var(--danger);">- ${t('teacher_payouts_label')}</span><span class="val" style="color:var(--danger);">-${fegp(1200)}</span></div>
+        <div class="shift-row"><span style="color:var(--danger);">- ${t('expenses_label')}</span><span class="val" style="color:var(--danger);">-${fegp(200)}</span></div>
+      </div>
+    </div>
+    <div class="shift-total">
+      <span>${t('expected_label')}</span>
+      <span>${fegp(2550)}</span>
+    </div>
+    <div style="margin-top:16px;display:flex;justify-content:center;">
+      <button class="btn btn-danger btn-lg" onclick="App.openShiftModal()">${icon('lock',16)} ${t('close_shift')}</button>
+    </div>`;
+  },
+
+  openShiftModal(){
+    S.shiftStep=0;
+    S.shiftActual=2500;
+    S.shiftReason='';
+    document.getElementById('shift-modal').classList.add('show');
+    App.renderShiftStep();
+  },
+
+  renderShiftStep(){
+    const steps=[t('step_expected'),t('step_actual'),t('step_diff'),t('step_reason'),t('step_confirm')];
+    document.getElementById('shift-modal-title').textContent=t('close_confirm');
+    const body=document.getElementById('shift-modal-body');
+    const footer=document.getElementById('shift-modal-footer');
+    let dots=steps.map((_,i)=>`<div class="step-dot ${i<S.shiftStep?'done':''} ${i===S.shiftStep?'current':''}"></div>`).join('');
+    let content='';
+    if(S.shiftStep===0){
+      content=`<div class="big-num green">${fegp(2550)}</div><p style="text-align:center;color:var(--text-secondary);">${t('step_expected')}</p>`;
+    }else if(S.shiftStep===1){
+      content=`<label>${t('step_actual')}</label><input type="number" id="shift-actual" value="${S.shiftActual}" style="font-size:24px;font-weight:700;text-align:center;padding:12px;" oninput="App.updateShiftDiff(this.value)">`;
+    }else if(S.shiftStep===2){
+      const diff=S.shiftActual-2550;
+      const sign=diff>0?'+':diff<0?'-':'';
+      content=`<div class="big-num ${diff<0?'red':'green'}">${sign}${fegp(Math.abs(diff))}</div><p style="text-align:center;color:var(--text-secondary);">${t('step_diff')}</p>`;
+    }else if(S.shiftStep===3){
+      content=`<label>${t('step_reason')}</label><textarea id="shift-reason" rows="3" placeholder="${S.lang==='en'?'Enter reason for difference...':'أدخل سبب الفرق...'}" style="margin-top:8px;" oninput="S.shiftReason=this.value">${S.shiftReason||''}</textarea>`;
+    }else{
+      content=`<div style="text-align:center;">${icon('check',48).replace('20px','48px')}<p style="font-size:15px;font-weight:600;margin-top:8px;">${S.lang==='en'?'Close the shift and lock all records?':'هل تريد إغلاق الوردية وقفل كل السجلات؟'}</p></div>`;
+    }
+    body.innerHTML=`<div class="step-indicator">${dots}</div><div class="step-content">${content}</div>`;
+    footer.innerHTML=`
+      ${S.shiftStep>0?`<button class="btn btn-secondary" onclick="App.shiftPrev()">${t('step_back')}</button>`:''}
+      ${S.shiftStep<4?`<button class="btn btn-primary" onclick="App.shiftNext()">${t('step_next')}</button>`:`<button class="btn btn-danger" onclick="App.confirmShiftClose()">${t('step_confirm')}</button>`}`;
+  },
+
+  shiftNext(){S.shiftStep++;App.renderShiftStep();},
+  shiftPrev(){S.shiftStep--;App.renderShiftStep();},
+  updateShiftDiff(v){S.shiftActual=parseInt(v)||0;},
+  confirmShiftClose(){
+    document.getElementById('shift-modal').classList.remove('show');
+    App.toast(S.lang==='en'?'Shift closed successfully!':'تم إغلاق الوردية بنجاح!','success');
+  },
+
+  closeModal(){document.getElementById('shift-modal').classList.remove('show');},
+
+  /* ----- Reconcile ----- */
+  renderReconcile(el){
+    const lobbyCount=58;
+    const hallCount=60;
+    const diff=hallCount-lobbyCount;
+    const mismatch=diff!==0&&!S.reconcileApproved;
+    el.innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">${t('reconcile_title')}</h1></div></div>
+    <div class="card" style="max-width:520px;margin:0 auto;">
+      <div class="card-header"><span class="card-title">رياضيات — ${tName(TEACHERS[0])}</span><span class="pill ${mismatch?'pill-danger':'pill-success'}"><span class="dot"></span>${mismatch?(S.lang==='en'?'Mismatch':'غير متطابق'):(S.lang==='en'?'Reconciled':'تمت المطابقة')}</span></div>
+      <div class="card-body text-center">
+        <div class="reconcile-counts">
+          <div class="reconcile-count"><div class="num" style="color:var(--primary);">${lobbyCount}</div><div class="label">${t('reconcile_lobby')}</div></div>
+          <div style="font-size:28px;color:var(--text-muted);">⟷</div>
+          <div class="reconcile-count"><div class="num" style="color:${diff!==0?'var(--danger)':'var(--primary)'};">${hallCount}</div><div class="label">${t('reconcile_hall')}</div></div>
+        </div>
+        <div class="reconcile-diff ${mismatch?'mismatch':'match'}">${mismatch?`⚠ +${diff} ${S.lang==='en'?'students unaccounted':'طالب غير محسوب'}`:`✓ ${S.lang==='en'?'Counts match perfectly':'الأعداد متطابقة'}`}</div>
+        ${mismatch?`<button class="btn btn-primary btn-lg" onclick="App.openReconcileModal()" style="justify-content:center;">${icon('refresh',16)} ${t('start_review')}</button>`
+          :`<button class="btn btn-secondary" onclick="App.toast('${S.lang==='en'?'Reconciliation approved':'تمت اعتماد المطابقة'}','success')">${icon('check',16)} ${t('approve_reconcile')}</button>`}
+      </div>
+    </div>`;
+  },
+
+  openReconcileModal(){
+    document.getElementById('reconcile-modal').classList.add('show');
+    document.getElementById('reconcile-modal-title').textContent=t('start_review');
+    document.getElementById('reconcile-modal-body').innerHTML=`
+      <p style="margin-bottom:16px;color:var(--text-secondary);">${S.lang==='en'?'Adjust the hall count to match the lobby count. Students not paid will be flagged.':'عدّل عدد القاعة للتوافق مع عدد الاستقبال. سيتم تمييز الطلاب غير المدفوعين.'}</p>
+      <label>${t('reconcile_hall')} ${S.lang==='en'?'Count':'العدد'}</label>
+      <input type="number" id="reconcile-hall" value="60" style="font-size:24px;font-weight:700;text-align:center;padding:12px;" oninput="App.updateReconcile()">
+      <div id="reconcile-result" style="margin-top:12px;text-align:center;font-weight:600;"></div>`;
+    App.updateReconcile();
+    document.getElementById('reconcile-modal-footer').innerHTML=`<button class="btn btn-primary" onclick="App.approveReconcile()">${t('approve_reconcile')}</button>`;
+  },
+
+  updateReconcile(){
+    const val=parseInt(document.getElementById('reconcile-hall')?.value)||0;
+    const diff=val-58;
+    const el=document.getElementById('reconcile-result');
+    if(!el)return;
+    if(diff===0){el.innerHTML=`<span style="color:var(--success);">✓ ${S.lang==='en'?'Counts match!':'الأعداد متطابقة!'}</span>`;}
+    else{el.innerHTML=`<span style="color:var(--danger);">⚠ ${diff>0?'+':''}${diff} ${S.lang==='en'?'difference':'فرق'}</span>`;}
+  },
+
+  approveReconcile(){
+    S.reconcileApproved=true;
+    document.getElementById('reconcile-modal').classList.remove('show');
+    App.renderScreen();
+    App.toast(S.lang==='en'?'Reconciliation approved!':'تمت اعتماد المطابقة!','success');
+  },
+
+  closeReconcileModal(){document.getElementById('reconcile-modal').classList.remove('show');},
+
+  /* ----- Settlement ----- */
+  renderSettle(el){
+    const list=SESSIONS.filter(s=>s.status==='active').slice(0,3);
+    const primary=list[0];
+    const pt=TEACHERS.find(t=>t.id===primary.teacherId);
+    const students=58;
+    const gross=students*primary.price;
+    const center=students*pt.fee;
+    const payout=gross-center;
+    el.innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">${t('settle_title')}</h1></div></div>
+    <div class="card mb-16" style="max-width:560px;">
+      <div class="card-header">
+        <span class="card-title">${tName(pt)} — ${tSubject(primary)}</span>
+        <span class="pill ${S.settled[primary.id]?'pill-success':'pill-warning'}"><span class="dot"></span>${S.settled[primary.id]?(S.lang==='en'?'Settled':'تمت التصفية'):t('settle_status')}</span>
+      </div>
+      <div class="card-body">
+        <div class="settlement-calc">
+          <div class="calc-row"><span>${t('settle_students')}: ${students}</span></div>
+          <div class="calc-row"><span>${t('settle_price')}: ${fegp(primary.price)}</span></div>
+          <div class="calc-row"><span>${t('settle_gross')}</span><span class="val">${fegp(gross)}</span></div>
+          <div class="calc-row"><span>${t('settle_center')} (${students}×${fegp(pt.fee).split(' ')[0]})</span><span class="val" style="color:var(--danger);">-${fegp(center)}</span></div>
+          <div class="calc-row" style="border-top:2px solid var(--border);padding-top:12px;"><span style="font-size:16px;font-weight:700;">${t('settle_payout')}</span><span class="val" style="font-size:18px;color:var(--primary);">${fegp(payout)}</span></div>
+        </div>
+        ${!S.settled[primary.id]?`<button class="btn btn-primary btn-lg w-full" style="justify-content:center;" onclick="App.confirmSettle(${primary.id})">${icon('check',16)} ${t('settle_confirm')}</button>`
+          :`<div style="text-align:center;color:var(--success);font-weight:600;padding:12px;">✓ ${S.lang==='en'?'Settlement confirmed':'تم تأكيد التصفية'}</div>`}
+      </div>
+    </div>
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">${S.lang==='en'?'Other Sessions':'الحصص الأخرى'}</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>${t('settle_teacher')}</th><th>${t('subject_label')}</th><th>${t('settle_students')}</th><th>${t('settle_payout')}</th><th>${t('status_col')}</th></tr></thead>
+        <tbody>
+          ${list.slice(1).map(s=>{
+            const tch=TEACHERS.find(x=>x.id===s.teacherId);
+            const c=Math.floor(s.checked*.85);
+            return `<tr>
+              <td>${tName(tch)}</td><td>${tSubject(s)}</td><td>${c}</td>
+              <td style="font-weight:700;color:var(--primary);">${fegp(c*(s.price-tch.fee))}</td>
+              <td><span class="pill pill-warning"><span class="dot"></span>${S.lang==='en'?'Pending':'بانتظار'}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  },
+
+  confirmSettle(id){
+    S.settled[id]=true;
+    App.renderScreen();
+    App.toast(S.lang==='en'?'Settlement confirmed!':'تم تأكيد التصفية!','success');
+  },
+
+  /* ----- Reports ----- */
+  renderReports(el){
+    const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو'];
+    const monthsEn=['Jan','Feb','Mar','Apr','May','Jun'];
+    const revData=[42000,38500,45200,41800,48500,52000];
+    const maxRev=Math.max(...revData);
+    const ml=S.lang==='en'?monthsEn:months;
+    el.innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">${t('reports_title')}</h1></div></div>
+    <div class="grid-2 mb-16">
+      <div class="chart-card">
+        <h3>${t('revenue_chart')}</h3>
+        <div class="chart-bar">
+          ${revData.map((v,i)=>`<div class="chart-col"><div class="bar-val">${Math.round(v/1000)}k</div><div class="bar" style="height:${v/maxRev*100}%"></div><div class="bar-label">${ml[i]}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>${t('payment_chart')}</h3>
+        <div class="donut-wrap">
+          <svg viewBox="0 0 120 120" width="120" height="120" style="transform:rotate(-90deg);">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="12"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#0e7c56" stroke-width="12" stroke-dasharray="180 314" stroke-dashoffset="0"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#d97706" stroke-width="12" stroke-dasharray="80 314" stroke-dashoffset="-180"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#2563eb" stroke-width="12" stroke-dasharray="54 314" stroke-dashoffset="-260"/>
+          </svg>
+          <div class="donut-legend">
+            <div class="donut-legend-item"><span class="swatch" style="background:#0e7c56;"></span> ${t('pay_cash')} 57%</div>
+            <div class="donut-legend-item"><span class="swatch" style="background:#d97706;"></span> Vodafone Cash 25%</div>
+            <div class="donut-legend-item"><span class="swatch" style="background:#2563eb;"></span> InstaPay 17%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-card">
+        <h3>${t('attendance_chart')}</h3>
+        <div class="chart-bar">
+          ${[85,92,78,88,95,90].map((v,i)=>`<div class="chart-col"><div class="bar-val">${v}%</div><div class="bar" style="height:${v}%;background:var(--primary);opacity:${.5+v/200}"></div><div class="bar-label">${ml[i]}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>${t('payout_chart')}</h3>
+        <div class="chart-bar">
+          ${[32000,29000,34000,31000,36000,39000].map((v,i)=>`<div class="chart-col"><div class="bar-val">${Math.round(v/1000)}k</div><div class="bar" style="height:${v/42000*100}%;background:var(--accent);"></div><div class="bar-label">${ml[i]}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  },
+
+  /* ----- Users ----- */
+  renderUsers(el){
+    el.innerHTML=`
+    <div class="page-header">
+      <div><h1 class="page-title">${t('users_title')}</h1></div>
+      <div class="page-actions"><button class="btn btn-primary">${icon('plus',16)} ${S.lang==='en'?'Add User':'إضافة مستخدم'}</button></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>${t('th_user_name')}</th><th>${t('th_username')}</th><th>${t('th_role')}</th><th>${t('th_user_phone')}</th><th>${t('th_user_status')}</th><th>${t('th_user_actions')}</th></tr></thead>
+        <tbody>
+          ${USERS.map(u=>`
+            <tr>
+              <td><div class="name-cell">${tName(u)}</div></td>
+              <td><span style="color:var(--text-muted);">@${u.username}</span></td>
+              <td><span class="role-badge ${u.role==='admin'?'admin':''}">${tRole(u)}</span></td>
+              <td>${u.phone}</td>
+              <td><span class="pill ${u.status==='active'?'pill-success':'pill-danger'}"><span class="dot"></span>${tStatus(u)}</span></td>
+              <td>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn btn-ghost btn-sm" onclick="App.toast('${t('edit')}')">${t('edit')}</button>
+                  <button class="btn btn-ghost btn-sm" onclick="App.toast('${t('reset_pass')}')">${icon('lock',14)}</button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="App.toast('${t('disable')}')">${icon('x',14)}</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  },
+
+  /* ----- Palette ----- */
+  openPalette(){
+    document.getElementById('palette-overlay').classList.add('show');
+    const inp=document.getElementById('palette-input');
+    inp.value='';inp.focus();
+    App.filterPalette('');
+  },
+  closePalette(){document.getElementById('palette-overlay').classList.remove('show');},
+  filterPalette(q){
+    const items=[
+      {icon:'dashboard',label:t('nav_dashboard'),screen:'dashboard'},
+      {icon:'lobby',label:t('nav_lobby'),screen:'lobby'},
+      {icon:'sessions',label:t('nav_sessions'),screen:'sessions'},
+      {icon:'students',label:t('nav_students'),screen:'students'},
+      {icon:'teachers',label:t('nav_teachers'),screen:'teachers'},
+      {icon:'rooms',label:t('nav_rooms'),screen:'rooms'},
+      {icon:'shift',label:t('nav_shift'),screen:'shift'},
+      {icon:'reconcile',label:t('nav_reconcile'),screen:'reconcile'},
+      {icon:'settle',label:t('nav_settle'),screen:'settle'},
+      {icon:'reports',label:t('nav_reports'),screen:'reports'},
+      {icon:'users',label:t('nav_users'),screen:'users'},
+    ];
+    const nq=q.toLowerCase();
+    const filtered=items.filter(it=>App.canAccess(it.screen)).filter(it=>it.label.includes(q)||it.screen.includes(nq));
+    document.getElementById('palette-results').innerHTML=filtered.map((it,i)=>`
+      <div class="palette-item ${i===0?'focused':''}" onclick="App.go('${it.screen}');App.closePalette();">
+        ${icon(it.icon,18)} <span>${it.label}</span>
+      </div>
+    `).join('')||`<div style="padding:16px;text-align:center;color:var(--text-muted);">${S.lang==='en'?'No results':'لا نتائج'}</div>`;
+  },
+
+  /* ----- Sidebar toggle ----- */
+  toggleSidebar(){
+    const sb=document.getElementById('sidebar');
+    const bd=document.getElementById('backdrop');
+    if(window.innerWidth<=1024){
+      sb.classList.toggle('open');
+      bd.classList.toggle('show');
+    }else{
+      S.collapsed=!S.collapsed;
+      localStorage.setItem('cos_collapsed',S.collapsed?'1':'0');
+      sb.classList.toggle('collapsed',S.collapsed);
+    }
+  },
+  closeSidebar(){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('backdrop').classList.remove('show');
+  },
+
+  /* ----- Lang toggle ----- */
+  toggleLang(){
+    S.lang=S.lang==='ar'?'en':'ar';
+    document.documentElement.lang=S.lang;
+    document.documentElement.dir=S.lang==='ar'?'rtl':'ltr';
+    localStorage.setItem('cos_lang',S.lang);
+    App.renderAll();
+  },
+
+  /* ----- Theme ----- */
+  setTheme(theme){
+    S.theme=theme;
+    document.documentElement.dataset.theme=theme;
+    localStorage.setItem('cos_theme',theme);
+    App.renderStyleFloat();
+  },
+
+  renderStyleFloat(){
+    const themes=[{id:'clean',label:'Clean SaaS'},{id:'pos',label:'Modern POS'},{id:'dark',label:'Premium Dark'}];
+    document.getElementById('style-float').innerHTML=themes.map(th=>`<div class="style-opt ${S.theme===th.id?'active':''}" onclick="App.setTheme('${th.id}')">${th.label}</div>`).join('');
+  },
+
+  /* ----- Login / roles ----- */
+  renderLogin(){
+    const accounts=[
+      {key:'admin',tag:t('role_admin'),sub:t('login_full_access')},
+      {key:'receptionist',tag:t('role_reception'),sub:t('login_reception_desc')},
+    ];
+    document.getElementById('login-overlay').innerHTML=`
+      <div class="login-card">
+        <div class="login-logo">${t('logo').charAt(0)}</div>
+        <div class="login-title">${t('login_title')}</div>
+        <div class="login-sub">${t('login_sub')}</div>
+        <div class="login-demo">${icon('alert',14)} ${t('demo_hint')}</div>
+        ${accounts.map(a=>{
+          const u=ROLES[a.key];
+          const nm=S.lang==='en'?u.nameEn:u.name;
+          return `<div class="login-account" onclick="App.login('${a.key}')">
+            <div class="acc-avatar">${nm.charAt(0)}</div>
+            <div>
+              <div class="acc-name">${nm}</div>
+              <div class="acc-sub">${a.sub}</div>
+            </div>
+            <span class="acc-tag">${a.tag}</span>
+            <span class="acc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  },
+
+  login(role){
+    S.role=role;
+    localStorage.setItem('cos_role',role);
+    S.screen='dashboard';
+    document.getElementById('login-overlay').classList.remove('show');
+    App.renderAll();
+    App.toast(S.lang==='en'?'Welcome back':'أهلاً بعودتك','success');
+  },
+
+  logout(){
+    S.role=null;
+    localStorage.removeItem('cos_role');
+    S.screen='dashboard';
+    App.renderLogin();
+    document.getElementById('login-overlay').classList.add('show');
+    App.renderAll();
+  },
+
+  toggleUserMenu(){
+    document.getElementById('user-menu').classList.toggle('open');
+  },
+
+  /* ----- Toast ----- */
+  toast(msg,type='success'){
+    const c=document.getElementById('toast-container');
+    const t=document.createElement('div');
+    t.className=`toast ${type}`;
+    t.innerHTML=`${type==='success'?icon('check',16):icon('alert',16)} ${msg}`;
+    c.appendChild(t);
+    setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(-8px)';t.style.transition='all .2s';setTimeout(()=>t.remove(),200);},2500);
+  },
+
+  /* ----- Init ----- */
+  renderAll(){
+    document.documentElement.dataset.theme=S.theme;
+    document.documentElement.lang=S.lang;
+    document.documentElement.dir=S.lang==='ar'?'rtl':'ltr';
+    App.renderSidebar();
+    App.renderHeader();
+    App.renderScreen();
+    App.renderStyleFloat();
+  },
+
+  init(){
+    App.renderAll();
+    App.renderLogin();
+    if(!S.role)document.getElementById('login-overlay').classList.add('show');
+    document.addEventListener('click',e=>{
+      const w=document.getElementById('user-menu-wrap');
+      if(w&&w.contains(e.target))return;
+      document.getElementById('user-menu')?.classList.remove('open');
+    });
+    /* Keyboard shortcuts */
+    document.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();App.openPalette();}
+      if(e.key==='Escape'){App.closePalette();App.closeModal();App.closeReconcileModal();}
+      if(S.screen==='lobby'){
+        const inp=document.getElementById('lobby-search');
+        if(document.activeElement!==inp&&e.key==='/'&&!e.ctrlKey&&!e.metaKey){
+          e.preventDefault();if(inp)inp.focus();
+        }
+        if(S.selectedPayment===null&&['1','2','3'].includes(e.key)){
+          App.selectPayment(['cash','vodafone','instapay'][parseInt(e.key)-1]);
+        }
+      }
+    });
+  }
+};
+
+App.init();
+</script>
+</body>
+</html>
