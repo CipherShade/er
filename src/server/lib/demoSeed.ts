@@ -617,8 +617,8 @@ async function seedMainCenter(
   if (legacyMarker) {
     await prisma.auditLog.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.attendance.deleteMany({ where: { tenantId: tenant.id } });
-    await prisma.sessionReconciliation.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.sessionSettlement.deleteMany({ where: { tenantId: tenant.id } });
+    await prisma.sessionReconciliation.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.session.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.expense.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.shiftRegister.deleteMany({ where: { tenantId: tenant.id } });
