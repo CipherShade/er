@@ -124,6 +124,24 @@ export function buildApp(options?: BuildAppOptions): FastifyInstance {
     });
   }
 
+  // Setup demo database endpoint
+  app.all('/api/setup-demo', async (request, reply) => {
+    try {
+      const { execSync } = await import('node:child_process');
+      const { seedDemoData } = await import('./lib/demoSeed.js');
+      try {
+        execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      } catch (migrateErr) {
+        request.log.warn({ err: migrateErr }, 'Migration deploy note in setup-demo');
+      }
+      await seedDemoData(prisma);
+      return { success: true, message: 'Database migrated and demo data seeded successfully!' };
+    } catch (err: any) {
+      request.log.error({ err }, 'setup-demo failed');
+      return reply.code(500).send({ success: false, error: err?.message || String(err) });
+    }
+  });
+
   // 4. Health check endpoint
   app.get('/api/health', async (_request, reply) => {
     try {
@@ -198,6 +216,7 @@ export function buildApp(options?: BuildAppOptions): FastifyInstance {
         code: statusCode >= 500 ? 'INTERNAL_SERVER_ERROR' : (error.code || 'REQUEST_ERROR'),
         message: statusCode >= 500 ? 'حدث خطأ داخلي في الخادم، يرجى المحاولة مرة أخرى.' : 'حدث خطأ أثناء معالجة الطلب.',
         messageEn: statusCode >= 500 ? 'An internal server error occurred.' : 'An error occurred while processing the request.',
+        details: error.message,
       },
     });
   });
