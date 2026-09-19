@@ -57,7 +57,7 @@ export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProp
 
         <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--surface, #f8fafc)', borderRadius: 8, border: '1px dashed var(--border)', fontSize: 12 }}>
           <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--text-secondary)' }}>بيانات الدخول للتجربة (Demo):</div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               type="button"
               className="btn btn--outline"
