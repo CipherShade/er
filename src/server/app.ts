@@ -130,9 +130,9 @@ export function buildApp(options?: BuildAppOptions): FastifyInstance {
       const { execSync } = await import('node:child_process');
       const { seedDemoData } = await import('./lib/demoSeed.js');
       try {
-        execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-      } catch (migrateErr) {
-        request.log.warn({ err: migrateErr }, 'Migration deploy note in setup-demo');
+        execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+      } catch (pushErr) {
+        request.log.warn({ err: pushErr }, 'db push note in setup-demo');
       }
       await seedDemoData(prisma);
       return { success: true, message: 'Database migrated and demo data seeded successfully!' };

@@ -20,14 +20,14 @@ attachSocketServer(app, io);
 
 async function ensureDatabaseReady(): Promise<void> {
   try {
-    await prisma.user.findFirst();
+    await prisma.tenant.findFirst();
   } catch (err) {
-    app.log.warn({ err }, 'Database tables missing or pending; running prisma migrate deploy...');
+    app.log.warn({ err }, 'Database tables missing or pending; running prisma db push...');
     try {
-      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-      app.log.info('Migrations applied successfully.');
-    } catch (migrateErr) {
-      app.log.error({ err: migrateErr }, 'Failed to run prisma migrate deploy');
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+      app.log.info('Prisma db push applied successfully.');
+    } catch (pushErr) {
+      app.log.error({ err: pushErr }, 'Failed to run prisma db push');
     }
   }
 
