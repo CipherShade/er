@@ -60,7 +60,7 @@ function LobbyPage({ selectedSessionId, onSessionChange }: { selectedSessionId: 
     try {
       await api('/attendances/checkin', { method: 'POST', body: JSON.stringify({ sessionId: selectedSession, studentId: student.id, paymentMethod, paymentReference: reference || undefined }) });
       notify(t('operations.checkInSuccess'));
-      setQuery(''); setReference('');
+      setQuery(''); setStudents([]); setReference('');
       await load();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t('operations.checkInError'));
@@ -87,6 +87,7 @@ function LobbyPage({ selectedSessionId, onSessionChange }: { selectedSessionId: 
                   <button
                     key={session.id}
                     type="button"
+                    aria-pressed={isSelected}
                     className={`session-card ${isSelected ? 'session-card--active' : ''}`}
                     onClick={() => { onSessionChange(session.id); setSelectedSession(session.id); }}
                   >
@@ -160,7 +161,7 @@ function LobbyPage({ selectedSessionId, onSessionChange }: { selectedSessionId: 
           </div>
           <label className="field mt-3">
             <span className="field-label">{t('operations.lobby.reference')}</span>
-            <input className="input mono" value={reference} onChange={(event) => setReference(event.target.value)} />
+            <input className="input mono" placeholder={t('operations.lobby.reference')} value={reference} onChange={(event) => setReference(event.target.value)} />
           </label>
         </div>
       </div>
@@ -249,7 +250,7 @@ function ShiftPage() {
 
           <div className="card card-pad">
             <h3 className="card-title">{t('actions.closeShift')}</h3>
-            <form onSubmit={(event) => { event.preventDefault(); void submit('/shifts/close', { actualCashCounted: Number(actual), notes: notes || undefined }, t('operations.shift.closed')); }} className="form-grid" style={{ maxWidth: 640 }}>
+            <form onSubmit={(event) => { event.preventDefault(); void submit('/shifts/close', { actualCashCounted: Number(actual), closingNotes: notes || undefined }, t('operations.shift.closed')); }} className="form-grid" style={{ maxWidth: 640 }}>
               <label className="field">
                 <span className="field-label">{t('operations.shift.actualCash')} ({t('currency')})</span>
                 <input className="input mono" type="number" min={0} step="0.01" value={actual} onChange={(event) => setActual(event.target.value)} />
@@ -397,17 +398,19 @@ function ReportsPage() {
   const [report, setReport] = useState<Record<string, unknown> | null>(null);
   const [shiftId, setShiftId] = useState('');
   const [entries, setEntries] = useState<Record<string, unknown>[]>([]);
+  const [auditLoaded, setAuditLoaded] = useState(false);
   const [error, setError] = useState('');
 
   const loadReport = async () => {
     setError('');
     try { setReport(await api<Record<string, unknown>>(`/reports/daily?date=${date}`)); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : t('operations.loadError')); }
+    catch { setError(t('operations.loadError')); }
   };
   const loadAudit = async () => {
     setError('');
+    setAuditLoaded(true);
     try { setEntries((await api<{ entries: Record<string, unknown>[] }>(`/reports/shifts/${shiftId}/audit`)).entries); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : t('operations.loadError')); }
+    catch { setError(t('operations.loadError')); }
   };
 
   return (
@@ -415,7 +418,7 @@ function ReportsPage() {
       <PageHeader kicker={t('navigation.groups.finance')} title={t('operations.reports.title')} subtitle={t('operations.reports.subtitle')} />
       <Banner text={error} tone="error" />
       <div className="flex-gap" style={{ marginBottom: 16 }}>
-        <input className="input" style={{ width: 'auto' }} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+        <input className="input" aria-label={t('operations.reports.load')} style={{ width: 'auto' }} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         <button type="button" className="btn btn--primary" onClick={() => void loadReport()}>
           <BarChart3 className="h-4 w-4" />{t('operations.reports.load')}
         </button>
@@ -434,10 +437,13 @@ function ReportsPage() {
             <span className="field-label">{t('operations.reports.shiftId')}</span>
             <input className="input mono" value={shiftId} onChange={(event) => setShiftId(event.target.value)} placeholder="xxxxxxxx-xxxx-..." />
           </label>
-          <button type="button" className="btn btn--ghost" style={{ marginTop: 22 }} onClick={() => void loadAudit()}>
+          <button type="button" className="btn btn--ghost" disabled={!shiftId} style={{ marginTop: 22 }} onClick={() => void loadAudit()}>
             <Coins className="h-4 w-4" />{t('operations.reports.loadAudit')}
           </button>
         </div>
+        {auditLoaded && entries.length === 0 && (
+          <p className="muted mt-3" style={{ fontSize: 13 }}>{t('operations.auditEmpty')}</p>
+        )}
         {entries.length > 0 && (
           <div className="table-wrap mt-3">
             <table className="table">
@@ -449,7 +455,11 @@ function ReportsPage() {
               <tbody>
                 {entries.slice(0, 12).map((entry, index) => (
                   <tr key={index}>
-                    {Object.values(entry).slice(0, 5).map((value, cellIndex) => <td key={cellIndex}>{String(value)}</td>)}
+                    {Object.entries(entry).slice(0, 5).map(([key, value], cellIndex) => (
+                      <td key={cellIndex}>
+                        {key === 'amount' && typeof value === 'number' ? money(value) : String(value)}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>

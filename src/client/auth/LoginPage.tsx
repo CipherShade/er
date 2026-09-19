@@ -32,7 +32,7 @@ export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProp
       <form onSubmit={submit} className="login-card">
         <div className="login-logo" style={{ cursor: 'pointer' }} onClick={onNavigateLanding}>م</div>
         <p className="login-brand-sub">{t('auth.welcome')} {t('appName')}</p>
-        <h1 className="login-title">{CENTER_NAME || t('center')}</h1>
+        <h1 className="login-title">{CENTER_NAME || t('auth.title')}</h1>
         <p className="login-sub">{t('auth.subtitle')}</p>
         <Banner text={error} tone="error" />
         <div className="form-stack">

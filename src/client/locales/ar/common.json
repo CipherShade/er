@@ -66,6 +66,7 @@
   "paymentMethods": {
     "cash": "كاش",
     "vodafoneCash": "فودافون كاش",
+    "vodafone_cash": "فودافون كاش",
     "instapay": "إنستاباي"
   },
   "desk": {
@@ -187,6 +188,7 @@
     "shift": { "title": "خزينة الوردية", "subtitle": "إدارة درج المكتب", "desk": "اسم المكتب", "openingCash": "الرصيد الافتتاحي", "actualCash": "الكاش الفعلي عند الإغلاق", "notes": "ملاحظات الإغلاق", "category": "نوع المصروف", "amount": "المبلغ", "description": "الوصف", "addExpense": "تسجيل المصروف", "expectedCashInDrawer": "الكاش المتوقع", "totalCashCollected": "الكاش المقبوض", "totalTeacherCashPayouts": "مستحقات المدرسين", "totalCashExpenses": "مصروفات الكاش", "opened": "تم فتح الوردية.", "closed": "تم إغلاق الوردية.", "expenseSaved": "تم تسجيل المصروف.", "trend": { "totalCashCollected": "إجمالي التحصيل الكاش", "digital": "التحصيل الرقمي" } },
     "reconciliation": { "title": "مطابقة أعداد الحضور", "subtitle": "مراجعة الاستقبال مع مساعد المدرس", "session": "الحصة", "lobbyCount": "عدد الاستقبال", "assistantCount": "عدد مساعد المدرس", "headcount": "العدد المعتمد", "notes": "ملاحظات حل الفرق", "saved": "تم حفظ المطابقة." },
     "settlement": { "title": "تصفية مستحقات المدرس", "subtitle": "صرف المستحقات وإغلاق الحصة", "session": "الحصة", "price": "سعر الحصة", "centerFee": "رسوم السنتر", "payment": "طريقة الصرف", "recipient": "اسم المستلم", "saved": "تمت التصفية بنجاح." },
-    "reports": { "title": "التقارير المالية", "subtitle": "ملخص اليوم وسجل الخزينة", "load": "تحميل التقرير", "totalAttendees": "إجمالي الحضور", "centerNetRevenue": "صافي إيراد السنتر", "teacherPayouts": "مستحقات المدرسين", "digitalCollections": "التحصيل الرقمي", "shiftId": "معرف الوردية", "loadAudit": "عرض سجل العمليات" }
+    "reports": { "title": "التقارير المالية", "subtitle": "ملخص اليوم وسجل الخزينة", "load": "تحميل التقرير", "totalAttendees": "إجمالي الحضور", "centerNetRevenue": "صافي إيراد السنتر", "teacherPayouts": "مستحقات المدرسين", "digitalCollections": "التحصيل الرقمي", "shiftId": "معرف الوردية", "loadAudit": "عرض سجل العمليات" },
+    "auditEmpty": "لا توجد حركات مسجلة لهذه الوردية."
   }
 }

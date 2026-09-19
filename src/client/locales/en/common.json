@@ -66,6 +66,7 @@
   "paymentMethods": {
     "cash": "Cash",
     "vodafoneCash": "Vodafone Cash",
+    "vodafone_cash": "Vodafone Cash",
     "instapay": "InstaPay"
   },
   "desk": {
@@ -187,6 +188,7 @@
     "shift": { "title": "Shift Cash Drawer", "subtitle": "Desk drawer control", "desk": "Desk name", "openingCash": "Opening cash", "actualCash": "Physical cash at close", "notes": "Closing notes", "category": "Expense category", "amount": "Amount", "description": "Description", "addExpense": "Record expense", "expectedCashInDrawer": "Expected cash", "totalCashCollected": "Cash collected", "totalTeacherCashPayouts": "Teacher payouts", "totalCashExpenses": "Cash expenses", "opened": "Shift opened.", "closed": "Shift closed.", "expenseSaved": "Expense recorded.", "trend": { "totalCashCollected": "Total cash collected", "digital": "Digital collections" } },
     "reconciliation": { "title": "Attendance Reconciliation", "subtitle": "Reception versus assistant count", "session": "Session", "lobbyCount": "Reception count", "assistantCount": "Assistant count", "headcount": "Approved headcount", "notes": "Resolution notes", "saved": "Reconciliation saved." },
     "settlement": { "title": "Teacher Settlement", "subtitle": "Pay out and close the session", "session": "Session", "price": "Session price", "centerFee": "Center fee", "payment": "Payout method", "recipient": "Recipient name", "saved": "Settlement completed." },
-    "reports": { "title": "Financial Reports", "subtitle": "Daily summary and drawer audit", "load": "Load report", "totalAttendees": "Total attendees", "centerNetRevenue": "Center net revenue", "teacherPayouts": "Teacher payouts", "digitalCollections": "Digital collections", "shiftId": "Shift ID", "loadAudit": "View audit log" }
+    "reports": { "title": "Financial Reports", "subtitle": "Daily summary and drawer audit", "load": "Load report", "totalAttendees": "Total attendees", "centerNetRevenue": "Center net revenue", "teacherPayouts": "Teacher payouts", "digitalCollections": "Digital collections", "shiftId": "Shift ID", "loadAudit": "View audit log" },
+    "auditEmpty": "No audit entries recorded for this shift."
   }
 }

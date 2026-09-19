@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import i18n from '../../src/client/locales/i18n';
 import { OperationsPage } from '@client/features/operations/OperationsPage';
 import { formatMoney } from '@client/lib/format';
+import { ToastHost } from '@client/components/ui/kit';
 import { jsonRes, parseBody, stubFetch } from './testUtils';
 
 const shiftOpen = { id: 'sh-1', financials: { expectedCashInDrawer: 100, totalCashCollected: 0, totalTeacherCashPayouts: 0, totalCashExpenses: 0 } };
@@ -21,10 +22,10 @@ describe('ShiftPage (OperationsPage mode="shift")', () => {
         return jsonRes({ data: { shift: shiftOpen } });
       } },
     ]);
-    render(<OperationsPage mode="shift" />);
+    render(<><ToastHost /><OperationsPage mode="shift" /></>);
 
     expect(await screen.findByLabelText(i18n.t('operations.shift.desk'))).toHaveValue('Desk 1');
-    await user.type(screen.getByLabelText(i18n.t('operations.shift.openingCash')), '100');
+    await user.type(screen.getByLabelText(i18n.t('operations.shift.openingCash'), { exact: false }), '100');
     await user.click(screen.getByRole('button', { name: i18n.t('actions.openShift') }));
 
     await waitFor(() => {
@@ -44,13 +45,13 @@ describe('ShiftPage (OperationsPage mode="shift")', () => {
         return jsonRes({ data: { success: true } });
       } },
     ]);
-    render(<OperationsPage mode="shift" />);
+    render(<><ToastHost /><OperationsPage mode="shift" /></>);
 
     expect(await screen.findByText(formatMoney(100, 'ar'))).toBeInTheDocument();
     expect(screen.getAllByText(formatMoney(0, 'ar')).length).toBe(3);
 
     await user.type(screen.getByLabelText(i18n.t('operations.shift.category')), 'أدوات مكتبية');
-    await user.type(screen.getByLabelText(i18n.t('operations.shift.amount')), '30.5');
+    await user.type(screen.getByLabelText(i18n.t('operations.shift.amount'), { exact: false }), '30.5');
     await user.type(screen.getByLabelText(i18n.t('operations.shift.description')), 'أقلام ودفاتر');
     await user.click(screen.getByRole('button', { name: i18n.t('operations.shift.addExpense') }));
 
@@ -72,9 +73,9 @@ describe('ShiftPage (OperationsPage mode="shift")', () => {
         return jsonRes({ data: { success: true } });
       } },
     ]);
-    render(<OperationsPage mode="shift" />);
+    render(<><ToastHost /><OperationsPage mode="shift" /></>);
 
-    await user.type(await screen.findByLabelText(i18n.t('operations.shift.actualCash')), '120');
+    await user.type(await screen.findByLabelText(i18n.t('operations.shift.actualCash'), { exact: false }), '120');
     await user.type(screen.getByLabelText(i18n.t('operations.shift.notes')), 'لا فائت');
     await user.click(screen.getByRole('button', { name: i18n.t('actions.closeShift') }));
 

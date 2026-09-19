@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../src/client/locales/i18n';
 import { OperationsPage } from '@client/features/operations/OperationsPage';
+import { ToastHost } from '@client/components/ui/kit';
 import { jsonRes, parseBody, stubFetch } from './testUtils';
 
 const { mockSocket } = vi.hoisted(() => ({
@@ -48,7 +49,7 @@ describe('LobbyPage (OperationsPage mode="lobby")', () => {
   it('renders active sessions with lobby/capacity counts and updates selection', async () => {
     const user = userEvent.setup();
     stubLobby();
-    render(<OperationsPage mode="lobby" />);
+    render(<><ToastHost /><OperationsPage mode="lobby" /></>);
 
     const sessionButton = await screen.findByRole('button', { name: /جيولوجيا ٣ث/ });
     expect(sessionButton).toBeInTheDocument();
@@ -66,7 +67,7 @@ describe('LobbyPage (OperationsPage mode="lobby")', () => {
 
   it('joins the lobby room and reloads sessions on socket broadcasts', async () => {
     stubLobby();
-    render(<OperationsPage mode="lobby" />);
+    render(<><ToastHost /><OperationsPage mode="lobby" /></>);
     await screen.findByText(/جيولوجيا ٣ث/);
 
     const connectHandler = mockSocket.on.mock.calls.find(([event]) => event === 'connect')?.[1];
@@ -82,13 +83,13 @@ describe('LobbyPage (OperationsPage mode="lobby")', () => {
   it('checks a student in with CASH after searching and selecting a session', async () => {
     const user = userEvent.setup();
     const { checkin } = stubLobby();
-    render(<OperationsPage mode="lobby" />);
+    render(<><ToastHost /><OperationsPage mode="lobby" /></>);
 
     await user.click(await screen.findByRole('button', { name: /جيولوجيا ٣ث/ }));
     await user.type(screen.getByPlaceholderText(i18n.t('operations.lobby.searchPlaceholder')), 'محمد');
 
     const studentName = await screen.findByText('محمد سعيد');
-    const studentRow = studentName.closest('div')?.parentElement as HTMLElement;
+    const studentRow = studentName.closest('.student-row') as HTMLElement;
     await user.click(within(studentRow).getByRole('button', { name: i18n.t('actions.checkIn') }));
 
     await waitFor(() => {
@@ -107,14 +108,14 @@ describe('LobbyPage (OperationsPage mode="lobby")', () => {
   it('sends the selected payment method and transfer reference on check-in', async () => {
     const user = userEvent.setup();
     const { checkin } = stubLobby();
-    render(<OperationsPage mode="lobby" />);
+    render(<><ToastHost /><OperationsPage mode="lobby" /></>);
 
     await user.click(await screen.findByRole('button', { name: /جيولوجيا ٣ث/ }));
-    await user.selectOptions(screen.getByLabelText(i18n.t('operations.lobby.paymentMethod')), 'INSTAPAY');
+    await user.click(screen.getByRole('button', { name: i18n.t('paymentMethods.instapay') }));
     await user.type(screen.getByPlaceholderText(i18n.t('operations.lobby.reference')), 'INST-9382');
     await user.type(screen.getByPlaceholderText(i18n.t('operations.lobby.searchPlaceholder')), 'محمد');
     const studentName = await screen.findByText('محمد سعيد');
-    const studentRow = studentName.closest('div')?.parentElement as HTMLElement;
+    const studentRow = studentName.closest('.student-row') as HTMLElement;
     await user.click(within(studentRow).getByRole('button', { name: i18n.t('actions.checkIn') }));
 
     await waitFor(() => {
