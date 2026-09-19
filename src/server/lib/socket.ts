@@ -54,7 +54,7 @@ export function createSocketAuthMiddleware(app: FastifyInstance) {
         return next(new Error('forbidden'));
       }
 
-      socket.data.user = { sub: payload.sub, username: payload.username, role: payload.role };
+      socket.data.user = { sub: payload.sub, username: payload.username, role: payload.role, tenantId: payload.tenantId };
       next();
     } catch {
       next(new Error('unauthorized'));
@@ -72,13 +72,20 @@ export function attachSocketServer(app: FastifyInstance, io: Server) {
         socket.emit('lobby:denied', { code: 'FORBIDDEN', message: 'ليس لديك صلاحية لمشاهدة لوحة الاستقبال.', messageEn: 'You do not have permission to view the lobby.' });
         return;
       }
-      await socket.join(LOBBY_ROOM);
-      socket.emit('lobby:joined', { room: LOBBY_ROOM, joinedAt: new Date().toISOString() });
+      const tenantRoom = user.tenantId ? `tenant:${user.tenantId}:lobby` : LOBBY_ROOM;
+      await socket.join(tenantRoom);
+      if (tenantRoom !== LOBBY_ROOM) {
+        await socket.join(LOBBY_ROOM);
+      }
+      socket.emit('lobby:joined', { room: tenantRoom, joinedAt: new Date().toISOString() });
     });
 
     socket.on('leave:lobby', async () => {
+      const user = socket.data.user as AuthTokenPayload | undefined;
+      const tenantRoom = user?.tenantId ? `tenant:${user.tenantId}:lobby` : LOBBY_ROOM;
+      await socket.leave(tenantRoom);
       await socket.leave(LOBBY_ROOM);
-      socket.emit('lobby:left', { room: LOBBY_ROOM, leftAt: new Date().toISOString() });
+      socket.emit('lobby:left', { room: tenantRoom, leftAt: new Date().toISOString() });
     });
   });
 

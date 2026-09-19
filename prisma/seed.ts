@@ -61,6 +61,25 @@ async function main(): Promise<void> {
   }
 
   // ──────────────────────────────────────────────────────────────
+  // 0. DEFAULT SAAS TENANT
+  // ──────────────────────────────────────────────────────────────
+  const defaultTenant = await prisma.tenant.upsert({
+    where: { slug: 'main-center' },
+    update: {},
+    create: {
+      name: 'سنتر الأوائل التعليمي',
+      slug: 'main-center',
+      ownerName: 'أ/ محمود الشريف',
+      ownerPhone: '01000000000',
+      plan: 'GROWTH',
+      isActive: true,
+      maxDesks: 3,
+      maxBranches: 1,
+    },
+  });
+  console.log(`✅  Tenant created:           ${defaultTenant.name} (@${defaultTenant.slug})`);
+
+  // ──────────────────────────────────────────────────────────────
   // 1. ADMIN USER
   // ──────────────────────────────────────────────────────────────
   const adminPasswordHash = await argon2.hash(adminPassword, {
@@ -72,7 +91,7 @@ async function main(): Promise<void> {
 
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { tenantId: defaultTenant.id },
     create: {
       username:          'admin',
       email:             'admin@educentererp.local',
@@ -82,6 +101,7 @@ async function main(): Promise<void> {
       phoneNumber:       '01000000000',
       preferredLanguage: 'ar',
       isActive:          true,
+      tenantId:          defaultTenant.id,
     },
   });
   console.log(`✅  Admin user created:       ${admin.fullName} (@${admin.username})`);
@@ -98,7 +118,7 @@ async function main(): Promise<void> {
 
   const receptionist = await prisma.user.upsert({
     where: { username: 'reception1' },
-    update: {},
+    update: { tenantId: defaultTenant.id },
     create: {
       username:          'reception1',
       email:             'reception1@educentererp.local',
@@ -108,6 +128,7 @@ async function main(): Promise<void> {
       phoneNumber:       '01012345678',
       preferredLanguage: 'ar',
       isActive:          true,
+      tenantId:          defaultTenant.id,
     },
   });
   console.log(`✅  Receptionist created:     ${receptionist.fullName} (@${receptionist.username})`);
@@ -124,9 +145,9 @@ async function main(): Promise<void> {
   const rooms = await Promise.all(
     roomsData.map((room) =>
       prisma.room.upsert({
-        where:  { name: room.name },
+        where:  { tenantId_name: { tenantId: defaultTenant.id, name: room.name } },
         update: {},
-        create: { ...room, isActive: true },
+        create: { ...room, tenantId: defaultTenant.id, isActive: true },
       })
     )
   );
@@ -158,6 +179,7 @@ async function main(): Promise<void> {
     teachersData.map((t) =>
       prisma.teacher.create({
         data: {
+          tenantId:         defaultTenant.id,
           fullName:         t.fullName,
           searchName:       normalizeArabicText(t.fullName),
           phoneNumber:      t.phoneNumber,
@@ -217,6 +239,7 @@ async function main(): Promise<void> {
     studentsData.map((s, i) =>
       prisma.student.create({
         data: {
+          tenantId:      defaultTenant.id,
           studentCode:   generateStudentCode(i + 1),
           fullName:      s.fullName,
           searchName:    normalizeArabicText(s.fullName),

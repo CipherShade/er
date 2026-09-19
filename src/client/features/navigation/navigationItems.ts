@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Building2, CalendarDays, ClipboardCheck, Coins, GraduationCap, LayoutDashboard, Users, Wallet } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, CalendarDays, ClipboardCheck, Coins, CreditCard, GraduationCap, LayoutDashboard, Shield, Users, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Role } from '@prisma/client';
 
@@ -14,8 +14,9 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-export const ALL_ROLES: Role[] = ['ADMIN', 'RECEPTIONIST'];
-export const ADMIN_ONLY: Role[] = ['ADMIN'];
+export const ALL_ROLES: Role[] = ['SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST'];
+export const ADMIN_ONLY: Role[] = ['SUPER_ADMIN', 'ADMIN'];
+export const SUPER_ADMIN_ONLY: Role[] = ['SUPER_ADMIN'];
 
 export const navigationGroups: NavigationGroup[] = [
   {
@@ -41,6 +42,13 @@ export const navigationGroups: NavigationGroup[] = [
       { id: 'reconciliation', labelKey: 'navigation.reconciliation', icon: ClipboardCheck, roles: ADMIN_ONLY },
       { id: 'settlement', labelKey: 'navigation.settlement', icon: Coins, roles: ADMIN_ONLY },
       { id: 'reports', labelKey: 'navigation.reports', icon: BarChart3, roles: ADMIN_ONLY },
+      { id: 'billing', labelKey: 'navigation.billing', icon: CreditCard, roles: ADMIN_ONLY },
+    ],
+  },
+  {
+    labelKey: 'navigation.groups.platform',
+    items: [
+      { id: 'superadmin', labelKey: 'navigation.superadmin', icon: Shield, roles: SUPER_ADMIN_ONLY },
     ],
   },
 ];

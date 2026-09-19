@@ -10,6 +10,7 @@ export type AuthTokenPayload = {
   sub: string;
   username: string;
   role: Role;
+  tenantId?: string | null;
 };
 
 declare module '@fastify/jwt' {
@@ -21,8 +22,18 @@ declare module '@fastify/jwt' {
 
 type LoginBody = { username: string; password: string };
 
+type RegisterCenterBody = {
+  centerName: string;
+  ownerName: string;
+  ownerPhone: string;
+  username: string;
+  password: string;
+  plan?: 'GROWTH' | 'BUSINESS';
+};
+
 const publicUserSelect = {
   id: true,
+  tenantId: true,
   username: true,
   fullName: true,
   role: true,
@@ -83,10 +94,117 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    const token = await app.jwt.sign({ sub: user.id, username: user.username, role: user.role as Role }, { expiresIn: config.jwtExpiresIn });
+    const token = await app.jwt.sign({ sub: user.id, username: user.username, role: user.role as Role, tenantId: user.tenantId }, { expiresIn: config.jwtExpiresIn });
     setAuthCookie(reply, token);
     const { passwordHash: _passwordHash, isActive: _isActive, ...safeUser } = user;
     return reply.send({ success: true, data: { user: safeUser } });
+  });
+
+  app.post<{ Body: RegisterCenterBody }>('/register-center', {
+    preHandler: [app.rateLimit.login],
+    schema: {
+      body: {
+        type: 'object',
+        required: ['centerName', 'ownerName', 'ownerPhone', 'username', 'password'],
+        properties: {
+          centerName: { type: 'string', minLength: 2, maxLength: 100 },
+          ownerName: { type: 'string', minLength: 2, maxLength: 100 },
+          ownerPhone: { type: 'string', pattern: '^(010|011|012|015)[0-9]{8}$' },
+          username: { type: 'string', minLength: 3, maxLength: 50, pattern: '^[a-zA-Z0-9_-]+$' },
+          password: { type: 'string', minLength: 8, maxLength: 200 },
+          plan: { type: 'string', enum: ['GROWTH', 'BUSINESS'] },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (request, reply) => {
+    const existingUser = await prisma.user.findUnique({ where: { username: request.body.username } });
+    if (existingUser) {
+      return reply.code(409).send({
+        success: false,
+        error: { code: 'USERNAME_TAKEN', message: 'اسم المستخدم مسجل مسبقاً، يرجى اختيار اسم مستخدم آخر.', messageEn: 'Username is already taken.' },
+      });
+    }
+
+    const plan = request.body.plan || 'GROWTH';
+    const trialDays = 14;
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+    const slugSuffix = Math.random().toString(36).substring(2, 7);
+    const slug = `center-${slugSuffix}`;
+
+    const passwordHash = await argon2.hash(request.body.password, {
+      type: argon2.argon2id,
+      memoryCost: 65536,
+      timeCost: 3,
+      parallelism: 4,
+    });
+
+    const result = await prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: {
+          name: request.body.centerName,
+          slug,
+          ownerName: request.body.ownerName,
+          ownerPhone: request.body.ownerPhone,
+          plan: plan === 'BUSINESS' ? 'BUSINESS' : 'GROWTH',
+          trialEndsAt,
+          isActive: true,
+          maxDesks: plan === 'BUSINESS' ? 10 : 1,
+          maxBranches: plan === 'BUSINESS' ? 5 : 1,
+        },
+      });
+
+      const user = await tx.user.create({
+        data: {
+          tenantId: tenant.id,
+          username: request.body.username,
+          fullName: request.body.ownerName,
+          phoneNumber: request.body.ownerPhone,
+          email: `${request.body.username}@${slug}.local`,
+          passwordHash,
+          role: Role.ADMIN,
+          preferredLanguage: 'ar',
+          isActive: true,
+        },
+        select: publicUserSelect,
+      });
+
+      // Initialize default room for quick start
+      await tx.room.create({
+        data: {
+          tenantId: tenant.id,
+          name: 'قاعة ١ (الرئيسية)',
+          capacity: 60,
+          floor: 'الطابق الأول',
+          isActive: true,
+        },
+      });
+
+      await recordAuditEntry({
+        actorId: user.id,
+        shiftRegisterId: null,
+        action: 'TENANT_REGISTERED',
+        entityType: 'TENANT',
+        entityId: tenant.id,
+        metadata: { centerName: tenant.name, plan: tenant.plan },
+      }, tx);
+
+      return { user, tenant };
+    });
+
+    const token = await app.jwt.sign(
+      { sub: result.user.id, username: result.user.username, role: result.user.role as Role, tenantId: result.tenant.id },
+      { expiresIn: config.jwtExpiresIn }
+    );
+    setAuthCookie(reply, token);
+
+    return reply.code(201).send({
+      success: true,
+      data: {
+        user: result.user,
+        tenant: result.tenant,
+      },
+    });
   });
 
   app.post('/logout', async (_request, reply) => {
@@ -96,7 +214,21 @@ const authRoutes: FastifyPluginAsync = async (app) => {
   app.get('/me', { preHandler: authenticate }, async (request, reply) => {
     const user = await prisma.user.findUnique({
       where: { id: request.user.sub },
-      select: { ...publicUserSelect, isActive: true, createdAt: true },
+      select: {
+        ...publicUserSelect,
+        isActive: true,
+        createdAt: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            plan: true,
+            trialEndsAt: true,
+            isActive: true,
+          },
+        },
+      },
     });
     if (!user) return reply.code(401).send({ success: false, error: { code: 'UNAUTHORIZED', message: 'الحساب غير موجود.', messageEn: 'Account not found.' } });
     return reply.send({ success: true, data: { user } });

@@ -1,15 +1,29 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { ToastHost, notify } from '../ui/kit';
 import { navigationGroups } from '../../features/navigation/navigationItems';
-import { DashboardPage } from '../../features/dashboard/DashboardPage';
-import { ManagementPage } from '../../features/management/ManagementPage';
-import { SchedulingPage } from '../../features/scheduling/SchedulingPage';
-import { StudentsPage } from '../../features/students/StudentsPage';
-import { OperationsPage } from '../../features/operations/OperationsPage';
+
+// ── Lazy-loaded page chunks (code splitting) ─────────────────────────────────
+// Each page is split into its own async chunk, reducing initial JS payload.
+const DashboardPage = lazy(() => import('../../features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const ManagementPage = lazy(() => import('../../features/management/ManagementPage').then((m) => ({ default: m.ManagementPage })));
+const SchedulingPage = lazy(() => import('../../features/scheduling/SchedulingPage').then((m) => ({ default: m.SchedulingPage })));
+const StudentsPage = lazy(() => import('../../features/students/StudentsPage').then((m) => ({ default: m.StudentsPage })));
+const OperationsPage = lazy(() => import('../../features/operations/OperationsPage').then((m) => ({ default: m.OperationsPage })));
+const BillingPage = lazy(() => import('../../features/billing/BillingPage').then((m) => ({ default: m.BillingPage })));
+const SuperAdminPage = lazy(() => import('../../features/admin/SuperAdminPage').then((m) => ({ default: m.SuperAdminPage })));
+
+// ── Page loading fallback ─────────────────────────────────────────────────────
+function PageFallback() {
+  return (
+    <div style={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
+      <span className="page-sub">جاري التحميل...</span>
+    </div>
+  );
+}
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -28,7 +42,7 @@ export function AppShell() {
 
   const navigate = (id: string) => {
     if (!allowedItems.some((item) => item.id === id)) {
-      notify(t('session.denied', 'لا تملك صلاحية الوصول لهذا القسم'), 'error');
+      notify(t('session.denied', 'لا تملك الصلاحية للوصول لهذا القسم'), 'error');
       return;
     }
     setActiveId(id);
@@ -49,7 +63,9 @@ export function AppShell() {
       case 'reconciliation': return <OperationsPage mode="reconciliation" />;
       case 'settlement': return <OperationsPage mode="settlement" />;
       case 'reports': return <OperationsPage mode="reports" />;
+      case 'billing': return <BillingPage />;
       case 'lobby': return <OperationsPage mode="lobby" selectedSessionId={sessionId} onSessionChange={setSessionId} />;
+      case 'superadmin': return <SuperAdminPage />;
       default: return <DashboardPage onNavigate={navigate} />;
     }
   })();
@@ -60,7 +76,9 @@ export function AppShell() {
       <div className="app-body">
         <Sidebar activeId={currentId} onSelect={navigate} role={role} />
         <main className="app-main" id="main">
-          {content}
+          <Suspense fallback={<PageFallback />}>
+            {content}
+          </Suspense>
         </main>
       </div>
       <ToastHost />

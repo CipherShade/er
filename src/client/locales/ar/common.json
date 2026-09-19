@@ -10,7 +10,8 @@
     "groups": {
       "operation": "التشغيل",
       "registries": "السجلات والأشقاق الأكاديمة",
-      "finance": "المالية والنسب"
+      "finance": "المالية والنسب",
+      "platform": "إدارة المنصة"
     },
     "dashboard": "لوحة التحكم",
     "lobby": "الاستقبال السريع",
@@ -21,7 +22,9 @@
     "shiftRegister": "خزينة الوردية",
     "reconciliation": "مطابقة الأعداد",
     "settlement": "تصفية المدرسين",
-    "reports": "التقارير المالية"
+    "reports": "التقارير المالية",
+    "billing": "الاشتراك والفوترة",
+    "superadmin": "لوحة المنصة"
   },
   "status": {
     "active": "نشط",

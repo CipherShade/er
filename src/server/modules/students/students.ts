@@ -36,7 +36,14 @@ export function nextStudentCodeFromLatest(latestCode: string | null | undefined)
   return `STU-${String((match ? Number(match[1]) : 0) + 1).padStart(5, '0')}`;
 }
 
-async function nextStudentCode(): Promise<string> { const latest = await prisma.student.findFirst({ orderBy: { studentCode: 'desc' }, select: { studentCode: true } }); return nextStudentCodeFromLatest(latest?.studentCode); }
+async function nextStudentCode(tenantId?: string | null): Promise<string> {
+  const latest = await prisma.student.findFirst({
+    where: tenantId ? { tenantId } : {},
+    orderBy: { studentCode: 'desc' },
+    select: { studentCode: true },
+  });
+  return nextStudentCodeFromLatest(latest?.studentCode);
+}
 
 function serialize(student: Prisma.StudentGetPayload<{}>) { return student; }
 export const serializeStudent = serialize;
@@ -47,7 +54,11 @@ const studentRoutes: FastifyPluginAsync = async (app) => {
     if (!pagination.ok) return reply.code(400).send(pagination.error);
     const { page, limit, skip } = pagination;
     const search = request.query.search?.trim();
-    const where = buildStudentSearchWhere(search);
+    const searchWhere = buildStudentSearchWhere(search);
+    const where: Prisma.StudentWhereInput = {
+      ...searchWhere,
+      ...(request.user?.tenantId ? { tenantId: request.user.tenantId } : {}),
+    };
     const [students, total] = await Promise.all([prisma.student.findMany({ where, orderBy: { fullName: 'asc' }, skip, take: limit }), prisma.student.count({ where })]);
     return reply.send({ success: true, data: { students: students.map(serializeStudent), pagination: { page, limit, total, pages: Math.ceil(total / limit) } } });
   });
@@ -55,7 +66,19 @@ const studentRoutes: FastifyPluginAsync = async (app) => {
     const body = request.body; const phoneError = validateStudentPhones(body); if (phoneError) return reply.code(400).send(phoneError); const fullName = body.fullName.trim();
     for (let attempt = 0; ; attempt += 1) {
       try {
-        const student = await prisma.student.create({ data: { studentCode: await nextStudentCode(), fullName, searchName: normalizeArabicText(fullName), studentPhone: body.studentPhone || null, guardianPhone: body.guardianPhone, academicStage: body.academicStage.trim(), schoolType: body.schoolType ?? SchoolType.GENERAL, notes: body.notes?.trim() || null } });
+        const student = await prisma.student.create({
+          data: {
+            tenantId: request.user.tenantId || null,
+            studentCode: await nextStudentCode(request.user.tenantId),
+            fullName,
+            searchName: normalizeArabicText(fullName),
+            studentPhone: body.studentPhone || null,
+            guardianPhone: body.guardianPhone,
+            academicStage: body.academicStage.trim(),
+            schoolType: body.schoolType ?? SchoolType.GENERAL,
+            notes: body.notes?.trim() || null,
+          },
+        });
         return reply.code(201).send({ success: true, data: { student } });
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

@@ -7,7 +7,12 @@ import { Banner } from '../components/ui/kit';
 
 const CENTER_NAME = import.meta.env.VITE_CENTER_NAME || '';
 
-export function LoginPage() {
+interface LoginPageProps {
+  onNavigateLanding?: () => void;
+  onNavigateSignup?: () => void;
+}
+
+export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProps) {
   const { t } = useTranslation();
   const { login } = useAuth();
   const [username, setUsername] = useState('');
@@ -25,7 +30,7 @@ export function LoginPage() {
   return (
     <main className="login-bg">
       <form onSubmit={submit} className="login-card">
-        <div className="login-logo">م</div>
+        <div className="login-logo" style={{ cursor: 'pointer' }} onClick={onNavigateLanding}>م</div>
         <p className="login-brand-sub">{t('auth.welcome')} {t('appName')}</p>
         <h1 className="login-title">{CENTER_NAME || t('center')}</h1>
         <p className="login-sub">{t('auth.subtitle')}</p>
@@ -48,6 +53,19 @@ export function LoginPage() {
           <button className="btn btn--primary" style={{ width: '100%', paddingBlock: 11 }} disabled={submitting}>
             <LogIn className="h-4 w-4" aria-hidden="true" />{submitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>
+        </div>
+
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+          {onNavigateLanding && (
+            <button type="button" onClick={onNavigateLanding} className="btn-link" style={{ color: 'var(--text-secondary)' }}>
+              ← العودة للرئيسية
+            </button>
+          )}
+          {onNavigateSignup && (
+            <button type="button" onClick={onNavigateSignup} className="btn-link" style={{ color: 'var(--primary)', fontWeight: 700 }}>
+              إنشاء سنتر جديد (تجربة مجانية)
+            </button>
+          )}
         </div>
       </form>
     </main>

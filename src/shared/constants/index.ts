@@ -1,9 +1,29 @@
 export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   RECEPTIONIST: 'RECEPTIONIST',
 } as const;
 export const Role = ROLES;
 export type Role = (typeof ROLES)[keyof typeof ROLES];
+
+export const TENANT_PLANS = {
+  FREE_TRIAL: 'FREE_TRIAL',
+  GROWTH: 'GROWTH',
+  BUSINESS: 'BUSINESS',
+  ENTERPRISE: 'ENTERPRISE',
+} as const;
+export const TenantPlan = TENANT_PLANS;
+export type TenantPlan = (typeof TENANT_PLANS)[keyof typeof TENANT_PLANS];
+
+export const SUBSCRIPTION_STATUSES = {
+  TRIALING: 'TRIALING',
+  ACTIVE: 'ACTIVE',
+  PAST_DUE: 'PAST_DUE',
+  CANCELED: 'CANCELED',
+  EXPIRED: 'EXPIRED',
+} as const;
+export const SubscriptionStatus = SUBSCRIPTION_STATUSES;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[keyof typeof SUBSCRIPTION_STATUSES];
 
 export const PAYMENT_METHODS = {
   CASH: 'CASH',

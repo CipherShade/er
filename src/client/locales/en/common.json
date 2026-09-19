@@ -10,7 +10,8 @@
     "groups": {
       "operation": "Operations",
       "registries": "Registries",
-      "finance": "Finance & Splits"
+      "finance": "Finance & Splits",
+      "platform": "Platform Admin"
     },
     "dashboard": "Dashboard",
     "lobby": "Fast Lobby Check-In",
@@ -21,7 +22,9 @@
     "shiftRegister": "Shift Cash Drawer",
     "reconciliation": "Count Reconciliation",
     "settlement": "Teacher Settlement",
-    "reports": "Financial Reports"
+    "reports": "Financial Reports",
+    "billing": "Subscription & Billing",
+    "superadmin": "Platform Console"
   },
   "status": {
     "active": "Active",

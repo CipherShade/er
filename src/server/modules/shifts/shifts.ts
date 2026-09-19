@@ -183,9 +183,27 @@ const shiftRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
+    if (request.user.tenantId) {
+      const [activeShiftsCount, tenant] = await Promise.all([
+        prisma.shiftRegister.count({ where: { tenantId: request.user.tenantId, status: ShiftStatus.OPEN } }),
+        prisma.tenant.findUnique({ where: { id: request.user.tenantId }, select: { maxDesks: true, plan: true } }),
+      ]);
+      if (tenant && activeShiftsCount >= tenant.maxDesks) {
+        return reply.code(403).send({
+          success: false,
+          error: {
+            code: 'PLAN_DESK_LIMIT_REACHED',
+            message: `لقد بلغت الحد الأقصى لعدد مكاتب الاستقبال المفتوحة معاً (${tenant.maxDesks} مكتب) لباقة ${tenant.plan}. يرجى الترقية إلى باقة Business لتشغيل عدة مكاتب متزامنة.`,
+            messageEn: `Active desk limit (${tenant.maxDesks}) reached for plan ${tenant.plan}. Upgrade to Business for unlimited desks.`,
+          },
+        });
+      }
+    }
+
     const shift = await prisma.$transaction(async (transaction) => {
       const createdShift = await transaction.shiftRegister.create({
         data: {
+          tenantId: request.user.tenantId || null,
           receptionistId: request.user.sub,
           deskIdentifier: request.body.deskIdentifier.trim(),
           openingCash: new Prisma.Decimal(request.body.openingCash),

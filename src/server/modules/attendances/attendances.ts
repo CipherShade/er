@@ -232,6 +232,9 @@ const attendanceRoutes: FastifyPluginAsync = async (app) => {
         timestamp: attendance.checkInTime,
       });
 
+      if (request.user.tenantId) {
+        app.io?.to(`tenant:${request.user.tenantId}:lobby`).emit('attendance:checked_in', payload);
+      }
       app.io?.to('center:lobby').emit('attendance:checked_in', payload);
 
       return reply.code(201).send({

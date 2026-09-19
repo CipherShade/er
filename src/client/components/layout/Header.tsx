@@ -30,6 +30,8 @@ export function Header({ activeLabel }: { activeLabel: string }) {
 
   const handleLogout = () => { void logout(); notify(t('actions.signOut') + ' ✓', 'success'); };
 
+  const centerDisplayName = user?.tenant?.name || CENTER_NAME || t('center');
+
   return (
     <header className="header">
       <div className="header-group">
@@ -37,7 +39,7 @@ export function Header({ activeLabel }: { activeLabel: string }) {
           <span className="brand-logo">م</span>
           <div style={{ minWidth: 0 }}>
             <div className="brand-name">{t('appName')}</div>
-            <div className="brand-sub">{CENTER_NAME || t('center')}</div>
+            <div className="brand-sub">{centerDisplayName}</div>
           </div>
         </div>
         <div className="center-chip" aria-hidden={isArabic ? undefined : 'true'} style={{ marginInlineStart: 8 }}>

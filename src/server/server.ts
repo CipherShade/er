@@ -17,6 +17,23 @@ attachSocketServer(app, io);
 
 async function bootstrapAdminUser(): Promise<void> {
   try {
+    let defaultTenant = await prisma.tenant.findUnique({ where: { slug: 'main-center' } });
+    if (!defaultTenant) {
+      defaultTenant = await prisma.tenant.create({
+        data: {
+          name: 'المركز الرئيسي',
+          slug: 'main-center',
+          ownerName: 'مدير النظام',
+          ownerPhone: '01000000000',
+          plan: 'BUSINESS',
+          isActive: true,
+          maxDesks: 5,
+          maxBranches: 3,
+        },
+      });
+      app.log.info({ tenantId: defaultTenant.id }, 'Default tenant auto-bootstrapped successfully');
+    }
+
     const adminExists = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
     if (!adminExists) {
       const argon2 = await import('argon2');
@@ -29,7 +46,7 @@ async function bootstrapAdminUser(): Promise<void> {
       });
       await prisma.user.upsert({
         where: { username: 'admin' },
-        update: { passwordHash: hash },
+        update: { passwordHash: hash, tenantId: defaultTenant.id },
         create: {
           username: 'admin',
           email: 'admin@educentererp.local',
@@ -39,6 +56,7 @@ async function bootstrapAdminUser(): Promise<void> {
           phoneNumber: '01000000000',
           preferredLanguage: 'ar',
           isActive: true,
+          tenantId: defaultTenant.id,
         },
       });
       app.log.info('Default admin user auto-bootstrapped successfully');
@@ -56,7 +74,7 @@ async function bootstrapAdminUser(): Promise<void> {
       });
       await prisma.user.upsert({
         where: { username: 'reception1' },
-        update: { passwordHash: hash },
+        update: { passwordHash: hash, tenantId: defaultTenant.id },
         create: {
           username: 'reception1',
           email: 'reception1@educentererp.local',
@@ -66,6 +84,7 @@ async function bootstrapAdminUser(): Promise<void> {
           phoneNumber: '01012345678',
           preferredLanguage: 'ar',
           isActive: true,
+          tenantId: defaultTenant.id,
         },
       });
       app.log.info('Default receptionist user auto-bootstrapped successfully');

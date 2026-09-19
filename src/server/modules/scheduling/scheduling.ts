@@ -93,7 +93,11 @@ const schedulingRoutes: FastifyPluginAsync = async (app) => {
     const query = request.query as { from?: string; to?: string };
     if (query.from !== undefined && Number.isNaN(new Date(query.from).getTime())) return reply.code(400).send(validation('تاريخ البداية (from) غير صحيح.', 'The start date (from) is invalid.'));
     if (query.to !== undefined && Number.isNaN(new Date(query.to).getTime())) return reply.code(400).send(validation('تاريخ النهاية (to) غير صحيح.', 'The end date (to) is invalid.'));
-    const where = query.from || query.to ? { startTime: { ...(query.to ? { lt: new Date(query.to) } : {}), ...(query.from ? { gte: new Date(query.from) } : {}) } } : {};
+    const timeWhere = query.from || query.to ? { startTime: { ...(query.to ? { lt: new Date(query.to) } : {}), ...(query.from ? { gte: new Date(query.from) } : {}) } } : {};
+    const where: Prisma.SessionWhereInput = {
+      ...timeWhere,
+      ...(request.user?.tenantId ? { tenantId: request.user.tenantId } : {}),
+    };
     const sessions = await prisma.session.findMany({ where, include: { teacher: { select: { id: true, fullName: true, subject: true } }, room: { select: { id: true, name: true, capacity: true } } }, orderBy: { startTime: 'asc' } });
     return reply.send({ success: true, data: { sessions: sessions.map((session) => ({ ...session, sessionPrice: session.sessionPrice.toString(), centerFeePerStudent: session.centerFeePerStudent.toString() })) } });
   });
@@ -106,6 +110,7 @@ const schedulingRoutes: FastifyPluginAsync = async (app) => {
       if (checked.conflict) return { kind: 'conflict' as const, conflict: checked.conflict };
       const session = await tx.session.create({
         data: {
+          tenantId: request.user.tenantId || null,
           teacherId: request.body.teacherId,
           roomId: request.body.roomId,
           title: request.body.title.trim(),
