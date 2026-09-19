@@ -49,4 +49,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 # Migrations are applied at container start (not build) so the image is reusable
 # across environments. The deployment entrypoint (and start:production) runs:
 #   prisma migrate deploy && node dist/server/server/server.js
-CMD ["node", "dist/server/server/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server/server/server.js"]

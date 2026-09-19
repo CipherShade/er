@@ -13,91 +13,37 @@ const io = new Server(app.server, {
   maxHttpBufferSize: config.socketMaxPayloadBytes,
 });
 
+import { execSync } from 'node:child_process';
+import { seedDemoData } from './lib/demoSeed.js';
+
 attachSocketServer(app, io);
 
-async function bootstrapAdminUser(): Promise<void> {
+async function ensureDatabaseReady(): Promise<void> {
   try {
-    let defaultTenant = await prisma.tenant.findUnique({ where: { slug: 'main-center' } });
-    if (!defaultTenant) {
-      defaultTenant = await prisma.tenant.create({
-        data: {
-          name: 'المركز الرئيسي',
-          slug: 'main-center',
-          ownerName: 'مدير النظام',
-          ownerPhone: '01000000000',
-          plan: 'BUSINESS',
-          isActive: true,
-          maxDesks: 5,
-          maxBranches: 3,
-        },
-      });
-      app.log.info({ tenantId: defaultTenant.id }, 'Default tenant auto-bootstrapped successfully');
-    }
-
-    const adminExists = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
-    if (!adminExists) {
-      const argon2 = await import('argon2');
-      const adminPass = process.env.SEED_ADMIN_PASSWORD || 'AdminPass@12345';
-      const hash = await argon2.hash(adminPass, {
-        type: argon2.argon2id,
-        memoryCost: 65536,
-        timeCost: 3,
-        parallelism: 4,
-      });
-      await prisma.user.upsert({
-        where: { username: 'admin' },
-        update: { passwordHash: hash, tenantId: defaultTenant.id },
-        create: {
-          username: 'admin',
-          email: 'admin@educentererp.local',
-          passwordHash: hash,
-          fullName: 'مدير النظام',
-          role: 'ADMIN',
-          phoneNumber: '01000000000',
-          preferredLanguage: 'ar',
-          isActive: true,
-          tenantId: defaultTenant.id,
-        },
-      });
-      app.log.info('Default admin user auto-bootstrapped successfully');
-    }
-
-    const recepExists = await prisma.user.findFirst({ where: { role: 'RECEPTIONIST' } });
-    if (!recepExists) {
-      const argon2 = await import('argon2');
-      const recepPass = process.env.SEED_RECEPTIONIST_PASSWORD || 'RecepPass@12345';
-      const hash = await argon2.hash(recepPass, {
-        type: argon2.argon2id,
-        memoryCost: 65536,
-        timeCost: 3,
-        parallelism: 4,
-      });
-      await prisma.user.upsert({
-        where: { username: 'reception1' },
-        update: { passwordHash: hash, tenantId: defaultTenant.id },
-        create: {
-          username: 'reception1',
-          email: 'reception1@educentererp.local',
-          passwordHash: hash,
-          fullName: 'سارة عبد الرحمن',
-          role: 'RECEPTIONIST',
-          phoneNumber: '01012345678',
-          preferredLanguage: 'ar',
-          isActive: true,
-          tenantId: defaultTenant.id,
-        },
-      });
-      app.log.info('Default receptionist user auto-bootstrapped successfully');
-    }
+    await prisma.user.findFirst();
   } catch (err) {
-    app.log.warn({ err }, 'Auto-bootstrap user creation skipped or encountered an error');
+    app.log.warn({ err }, 'Database tables missing or pending; running prisma migrate deploy...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      app.log.info('Migrations applied successfully.');
+    } catch (migrateErr) {
+      app.log.error({ err: migrateErr }, 'Failed to run prisma migrate deploy');
+    }
+  }
+
+  try {
+    app.log.info('Ensuring demo users and seed data are ready...');
+    await seedDemoData(prisma);
+    app.log.info('Demo seed and credentials verification completed successfully.');
+  } catch (seedErr) {
+    app.log.error({ err: seedErr }, 'Failed during seedDemoData');
   }
 }
 
 async function start(): Promise<void> {
   try {
+    await ensureDatabaseReady();
     await app.listen({ port: config.port, host: '0.0.0.0' });
-    await bootstrapAdminUser();
 
     app.log.info(
       { environment: config.nodeEnv },

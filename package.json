@@ -11,7 +11,7 @@
     "build:server": "tsc -p tsconfig.server.json",
     "build:production": "npm run db:generate && npm run build:client && npm run build:server",
     "build": "npm run build:client && npm run build:server",
-    "start": "node dist/server/server/server.js",
+    "start": "prisma migrate deploy && node dist/server/server/server.js",
     "start:production": "prisma migrate deploy && node dist/server/server/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
