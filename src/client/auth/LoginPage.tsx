@@ -74,6 +74,14 @@ export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProp
             >
               استقبال (reception1)
             </button>
+            <button
+              type="button"
+              className="btn btn--outline"
+              style={{ flex: 1, fontSize: 12, paddingBlock: 6 }}
+              onClick={() => { setUsername('superadmin'); setPassword('Platform@12345!'); }}
+            >
+              مدير المنصة (superadmin)
+            </button>
           </div>
         </div>
 
