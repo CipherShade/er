@@ -55,6 +55,28 @@ export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProp
           </button>
         </div>
 
+        <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--surface, #f8fafc)', borderRadius: 8, border: '1px dashed var(--border)', fontSize: 12 }}>
+          <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--text-secondary)' }}>بيانات الدخول للتجربة (Demo):</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn--outline"
+              style={{ flex: 1, fontSize: 12, paddingBlock: 6 }}
+              onClick={() => { setUsername('admin'); setPassword('Admin@12345!'); }}
+            >
+              مدير (admin)
+            </button>
+            <button
+              type="button"
+              className="btn btn--outline"
+              style={{ flex: 1, fontSize: 12, paddingBlock: 6 }}
+              onClick={() => { setUsername('reception1'); setPassword('Desk@12345!'); }}
+            >
+              استقبال (reception1)
+            </button>
+          </div>
+        </div>
+
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
           {onNavigateLanding && (
             <button type="button" onClick={onNavigateLanding} className="btn-link" style={{ color: 'var(--text-secondary)' }}>
