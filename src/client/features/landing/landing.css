@@ -909,3 +909,82 @@
     width: 100%;
   }
 }
+
+@media (max-width: 960px) {
+  .madar-landing .lp-nav-links {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    position: absolute;
+    top: calc(100% + 10px);
+    inset-inline: 0;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    box-shadow: var(--lp-shadow-md);
+  }
+
+  .madar-landing .lp-nav-links > a {
+    padding: 12px 16px;
+    text-align: center;
+  }
+
+  .madar-landing .lp-nav-open .lp-nav-links {
+    display: flex;
+  }
+}
+
+@media (max-width: 520px) {
+  .madar-landing .lp-nav {
+    padding-top: 8px;
+  }
+
+  .madar-landing .lp-nav-pill {
+    height: 58px;
+    gap: 10px;
+    padding-inline: 12px 10px;
+  }
+
+  .madar-landing .lp-nav.is-scrolled .lp-nav-pill {
+    height: 52px;
+  }
+
+  .madar-landing .lp-brand-name {
+    font-size: 1.15rem;
+  }
+
+  .madar-landing .lp-hero {
+    padding-top: 20px;
+  }
+
+  .madar-landing .lp-hero h1 {
+    font-size: clamp(1.85rem, 7.5vw, 2.4rem);
+  }
+
+  .madar-landing .lp-win {
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .madar-landing .lp-price b {
+    font-size: 2.9rem;
+  }
+
+  .madar-landing .lp-sec-head p {
+    font-size: 1rem;
+  }
+
+  .madar-landing .lp-tabpanels {
+    padding: 18px;
+  }
+
+  .madar-landing .lp-footer-grid {
+    gap: 24px;
+  }
+
+  .madar-landing .lp-calc-fields input {
+    font-size: 1rem;
+  }
+}

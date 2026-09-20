@@ -85,7 +85,7 @@ export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProp
           </div>
         </div>
 
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13, gap: 8, flexWrap: 'wrap' }}>
           {onNavigateLanding && (
             <button type="button" onClick={onNavigateLanding} className="btn-link" style={{ color: 'var(--text-secondary)' }}>
               ← العودة للرئيسية

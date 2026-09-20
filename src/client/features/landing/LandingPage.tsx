@@ -72,17 +72,17 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
       {/* ================= NAVBAR ================= */}
       <header className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`}>
         <div className="lp-wrap">
-          <div className="lp-nav-pill">
+          <div className={`lp-nav-pill${mobileMenuOpen ? ' lp-nav-open' : ''}`}>
             <a href="#top" className="lp-brand">
               <span className="lp-logo-sq">م</span>
               <span className="lp-brand-name">مدار</span>
             </a>
 
             <nav className="lp-nav-links">
-              <a href="#features">المميزات</a>
-              <a href="#how">كيف يعمل</a>
-              <a href="#pricing">الأسعار</a>
-              <a href="#faq">الأسئلة الشائعة</a>
+              <a href="#features" onClick={() => setMobileMenuOpen(false)}>المميزات</a>
+              <a href="#how" onClick={() => setMobileMenuOpen(false)}>كيف يعمل</a>
+              <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>الأسعار</a>
+              <a href="#faq" onClick={() => setMobileMenuOpen(false)}>الأسئلة الشائعة</a>
             </nav>
 
             <div className="lp-nav-actions">
@@ -99,6 +99,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
               className="lp-nav-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="القائمة"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>

@@ -142,8 +142,8 @@ export function BillingPage() {
 
       {/* Trial Alert Banner */}
       {isTrialActive && (
-        <div style={{ background: '#e8f5ef', border: '1px solid #c9e8db', borderRadius: 14, padding: 18, marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div className="billing-banner" style={{ background: '#e8f5ef', border: '1px solid #c9e8db', borderRadius: 14, padding: 18, marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 220 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: '#0e7c56', color: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
               <Sparkles className="h-6 w-6" />
             </div>
@@ -156,7 +156,7 @@ export function BillingPage() {
           </div>
           <button
             type="button"
-            className="btn btn--primary"
+            className="btn btn--primary cta-full"
             onClick={() => openPaymentModal(PURCHASABLE_PLAN_IDS[0])}
           >
             تفعيل الاشتراك الدائم
@@ -347,7 +347,7 @@ export function BillingPage() {
       {/* Payment Modal */}
       {showPaymentModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 100, padding: 16 }}>
-          <div className="card" style={{ maxWidth: 460, width: '100%', padding: 24 }}>
+          <div className="card" style={{ maxWidth: 460, width: '100%', padding: 24, maxHeight: 'min(88vh, 680px)', overflowY: 'auto' }}>
             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>
               تأكيد تفعيل الاشتراك في باقة {selectedConfig.nameAr}
             </h3>
@@ -358,7 +358,7 @@ export function BillingPage() {
             <div style={{ display: 'grid', gap: 14 }}>
               <div>
                 <label className="field-label" style={{ display: 'block', marginBottom: 6 }}>طريقة الدفع (مصر):</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))', gap: 8 }}>
                   {(Object.keys(billingConfig.paymentAccounts) as (keyof typeof billingConfig.paymentAccounts)[]).map((method) => (
                     <button
                       key={method}

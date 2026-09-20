@@ -135,7 +135,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
                 اختر الباقة (جميع الباقات تشمل 14 يوم مجاناً)
               </span>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 10 }}>
                 {PURCHASABLE_PLAN_IDS.map((planId) => {
                   const planConfig = PLANS[planId as TenantPlan];
                   const isSelected = plan === planId;
@@ -230,7 +230,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
               </div>
             </label>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => setStep(1)}
@@ -252,7 +252,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
           </form>
         )}
 
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13, gap: 8, flexWrap: 'wrap' }}>
           {onNavigateLanding && (
             <button type="button" onClick={onNavigateLanding} className="btn-link" style={{ color: 'var(--text-secondary)' }}>
               ← العودة للرئيسية
