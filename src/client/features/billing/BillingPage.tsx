@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Check, Sparkles, History } from 'lucide-react';
+import { Check, Sparkles, History, TriangleAlert, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { notify } from '../../components/ui/kit';
 import { apiUrl } from '../../lib/config';
+import { money } from '../../lib/api';
+import { billingConfig } from '../../lib/billingConfig';
+import { PURCHASABLE_PLAN_IDS, PLANS, getPlanConfig } from '../../../shared/constants/plans';
+import type { VisitUsage } from '../../../shared/constants/plans';
 
 type SubscriptionItem = {
   id: string;
@@ -24,6 +28,16 @@ type TenantDetails = {
   isActive: boolean;
   maxDesks: number;
   maxBranches: number;
+  maxUsers: number;
+  visitLimit: number | null;
+};
+
+const STATUS_LABELS: Record<string, { ar: string; ok: boolean }> = {
+  ACTIVE: { ar: 'مفعل', ok: true },
+  TRIALING: { ar: 'تجربة', ok: true },
+  PAST_DUE: { ar: 'متأخر', ok: false },
+  CANCELED: { ar: 'ملغي', ok: false },
+  EXPIRED: { ar: 'منتهي', ok: false },
 };
 
 export function BillingPage() {
@@ -31,9 +45,10 @@ export function BillingPage() {
   const [tenant, setTenant] = useState<TenantDetails | null>(null);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(0);
   const [isTrialActive, setIsTrialActive] = useState<boolean>(false);
+  const [usage, setUsage] = useState<VisitUsage | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<'GROWTH' | 'BUSINESS'>('BUSINESS');
+  const [selectedPlan, setSelectedPlan] = useState<(typeof PURCHASABLE_PLAN_IDS)[number]>(PURCHASABLE_PLAN_IDS[0]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'VODAFONE_CASH' | 'INSTAPAY' | 'CASH'>('VODAFONE_CASH');
   const [paymentReference, setPaymentReference] = useState('');
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -48,6 +63,7 @@ export function BillingPage() {
           tenant: TenantDetails;
           trialDaysRemaining: number;
           isTrialActive: boolean;
+          usage?: { periodStart: string; visits: VisitUsage };
           subscriptions: SubscriptionItem[];
         };
       };
@@ -55,10 +71,11 @@ export function BillingPage() {
         setTenant(json.data.tenant);
         setTrialDaysRemaining(json.data.trialDaysRemaining);
         setIsTrialActive(json.data.isTrialActive);
+        setUsage(json.data.usage?.visits ?? null);
         setSubscriptions(json.data.subscriptions);
       }
     } catch {
-      // fallback
+      // fallback: page renders from shared plan config only
     } finally {
       setLoading(false);
     }
@@ -83,8 +100,9 @@ export function BillingPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error?.message || 'فشلت عملية الترقية');
-      notify('تمت ترقية الاشتراك بنجاح! ✓', 'success');
+      notify('تم تفعيل الاشتراك بنجاح! ✓', 'success');
       setShowPaymentModal(false);
+      setPaymentReference('');
       void fetchSubscriptionDetails();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء الترقية';
@@ -94,7 +112,11 @@ export function BillingPage() {
     }
   };
 
-  const currentPlan = tenant?.plan || user?.tenant?.plan || 'FREE_TRIAL';
+  const openPaymentModal = (planId: (typeof PURCHASABLE_PLAN_IDS)[number]) => {
+    setSelectedPlan(planId);
+    setSelectedPaymentMethod('VODAFONE_CASH');
+    setShowPaymentModal(true);
+  };
 
   if (loading) {
     return (
@@ -103,6 +125,11 @@ export function BillingPage() {
       </div>
     );
   }
+
+  const currentPlanKey = tenant?.plan || user?.tenant?.plan || 'FREE_TRIAL';
+  const currentConfig = getPlanConfig(currentPlanKey);
+  const selectedConfig = PLANS[selectedPlan];
+  const usageBanner = usage && usage.limit !== null && usage.level !== 'ok' ? usage : null;
 
   return (
     <div className="page" dir="rtl">
@@ -130,125 +157,150 @@ export function BillingPage() {
           <button
             type="button"
             className="btn btn--primary"
-            onClick={() => {
-              setSelectedPlan('BUSINESS');
-              setShowPaymentModal(true);
-            }}
+            onClick={() => openPaymentModal(PURCHASABLE_PLAN_IDS[0])}
           >
             تفعيل الاشتراك الدائم
           </button>
         </div>
       )}
 
-      {/* Plans Comparison */}
+      {/* Current Plan Summary */}
+      {tenant && (
+        <div className="card" style={{ padding: 18, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#043128', color: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <TrendingUp className="h-6 w-6" />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <b style={{ fontSize: 16 }}>باقتك الحالية: {currentConfig.nameAr}</b>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '2px 0 0' }}>{currentConfig.taglineAr}</p>
+          </div>
+          <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
+            <div>
+              <span style={{ color: '#6b7280' }}>مكاتب الاستقبال</span>
+              <b style={{ display: 'block' }}>{tenant.maxDesks} مكاتب</b>
+            </div>
+            <div>
+              <span style={{ color: '#6b7280' }}>موظفو الاستقبال</span>
+              <b style={{ display: 'block' }}>{tenant.maxUsers} موظفين</b>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visit Usage Banner (advisory only) */}
+      {usageBanner && (
+        <div
+          style={{
+            background: usageBanner.level === 'over' ? '#fef2f2' : usageBanner.level === 'strong' ? '#fff7ed' : '#fffbeb',
+            border: `1px solid ${usageBanner.level === 'over' ? '#fecaca' : usageBanner.level === 'strong' ? '#fed7aa' : '#fde68a'}`,
+            borderRadius: 14,
+            padding: 18,
+            marginBottom: 24,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <TriangleAlert className={`h-5 w-5 ${usageBanner.level === 'over' ? 'text-red-600' : usageBanner.level === 'strong' ? 'text-orange-600' : 'text-amber-500'}`} />
+            <div style={{ fontSize: 13, flex: 1 }}>
+              {usageBanner.level === 'over' ? (
+                <p>
+                  <b>تجاوزت الاستخدام الشهري للباقة ({usageBanner.used.toLocaleString('ar-EG')} زيارة).</b>{' '}
+                  النظام يستمر في العمل بشكل طبيعي — لا توجد أي قيود على الاستقبال. يُنصح بالترقية لباقة أعلى لضمان سعة أكبر.
+                </p>
+              ) : usageBanner.level === 'strong' ? (
+                <p>
+                  <b>اقتربت من الحد الشهري للزيارات ({usageBanner.percent}٪).</b>{' '}
+                  متبقي {usageBanner.remaining?.toLocaleString('ar-EG')} زيارة هذا الشهر. يُنصح بالترقية لباقة أعلى لضمان سعة أكبر.
+                </p>
+              ) : (
+                <p>
+                  <b>استهلكت {usageBanner.percent}٪ من سعة الزيارات الشهرية.</b>{' '}
+                  متبقي {usageBanner.remaining?.toLocaleString('ar-EG')} زيارة للشهر الحالي.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn btn--primary"
+              style={{ fontSize: 12, padding: '8px 14px', flexShrink: 0 }}
+              onClick={() => openPaymentModal(PURCHASABLE_PLAN_IDS[PURCHASABLE_PLAN_IDS.length - 1])}
+            >
+              الترقية الآن
+            </button>
+          </div>
+          <div style={{ marginTop: 12, height: 8, borderRadius: 99, background: '#eee', overflow: 'hidden' }}>
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min((usageBanner.percent ?? 0), 100)}%`,
+                background: usageBanner.level === 'over' ? '#dc2626' : usageBanner.level === 'strong' ? '#ea580c' : '#f59e0b',
+                borderRadius: 99,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Plans Comparison — priced from the shared plan config */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20, marginBottom: 32 }}>
-        {/* Growth Plan Card */}
-        <div
-          style={{
-            background: '#fff',
-            border: currentPlan === 'GROWTH' ? '2px solid #0e7c56' : '1px solid #e2e0dc',
-            borderRadius: 18,
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 800 }}>Growth</h3>
-            {currentPlan === 'GROWTH' && (
-              <span style={{ background: '#e8f5ef', color: '#0e7c56', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99 }}>
-                باقتك الحالية
-              </span>
-            )}
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', minHeight: 40 }}>الخطة المثالية للسناتر ذات الفرع الواحد والمكتب الواحد.</p>
-          <div style={{ fontSize: 32, fontWeight: 800, margin: '14px 0' }}>
-            299 <span style={{ fontSize: 14, color: '#6b7280' }}>ج.م / شهرياً</span>
-          </div>
+        {PURCHASABLE_PLAN_IDS.map((planId) => {
+          const planConfig = PLANS[planId];
+          const isCurrent = currentConfig.id === planId;
+          const isFeatured = planConfig.featured;
+          const allowSubscribe = !isCurrent || isTrialActive;
+          const cardDark = isFeatured;
 
-          <ul style={{ display: 'grid', gap: 10, margin: '14px 0 24px', flex: 1, fontSize: 13 }}>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-700" /> مكتب استقبال واحد متصل
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-700" /> إدارة الطلاب، المدرسين، والحصص
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-700" /> خزينة الوردية وتصفية المدرسين
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-700" /> التقارير اليومية والمالية
-            </li>
-          </ul>
+          return (
+            <div
+              key={planId}
+              style={{
+                background: cardDark ? '#043128' : '#fff',
+                color: cardDark ? '#fff' : 'inherit',
+                border: isCurrent ? '2px solid #0e7c56' : `1px solid ${cardDark ? '#0e7c56' : '#e2e0dc'}`,
+                borderRadius: 18,
+                padding: 24,
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: cardDark ? '0 12px 32px -8px rgba(4, 49, 40, 0.4)' : undefined,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: cardDark ? '#fff' : undefined }}>{planConfig.nameAr}</h3>
+                {isCurrent && (
+                  <span style={{ background: '#e8f5ef', color: '#0e7c56', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99 }}>
+                    باقتك الحالية
+                  </span>
+                )}
+                {isFeatured && !isCurrent && (
+                  <span style={{ background: '#f59e0b', color: '#3b2400', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 99 }}>
+                    الأكثر طلباً للسناتر الكبيرة
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 13, color: cardDark ? '#a3d9c1' : '#6b7280', minHeight: 40 }}>{planConfig.taglineAr}</p>
+              <div style={{ fontSize: 32, fontWeight: 800, margin: '14px 0', color: cardDark ? '#fff' : undefined }}>
+                {money(planConfig.priceEgp)} <span style={{ fontSize: 14, color: cardDark ? '#a3d9c1' : '#6b7280' }}>/ شهرياً</span>
+              </div>
 
-          <button
-            type="button"
-            className="btn btn--secondary"
-            disabled={currentPlan === 'GROWTH'}
-            onClick={() => {
-              setSelectedPlan('GROWTH');
-              setShowPaymentModal(true);
-            }}
-          >
-            {currentPlan === 'GROWTH' ? 'باقتك الحالية' : 'الاشتراك في Growth'}
-          </button>
-        </div>
+              <ul style={{ display: 'grid', gap: 10, margin: '14px 0 24px', flex: 1, fontSize: 13 }}>
+                {planConfig.featuresAr.map((feature) => (
+                  <li key={feature} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Check className={`h-4 w-4 ${cardDark ? 'text-emerald-400' : 'text-emerald-700'}`} /> {feature}
+                  </li>
+                ))}
+              </ul>
 
-        {/* Business Plan Card */}
-        <div
-          style={{
-            background: '#043128',
-            color: '#fff',
-            border: '2px solid #0e7c56',
-            borderRadius: 18,
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 12px 32px -8px rgba(4, 49, 40, 0.4)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Business</h3>
-            <span style={{ background: '#f59e0b', color: '#3b2400', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 99 }}>
-              الأكثر طلباً للسناتر الكبيرة
-            </span>
-          </div>
-          <p style={{ fontSize: 13, color: '#a3d9c1', minHeight: 40 }}>تشغيل متزامن لعدة مكاتب استقبال وإدارة متعددة الفروع.</p>
-          <div style={{ fontSize: 32, fontWeight: 800, margin: '14px 0', color: '#fff' }}>
-            500 <span style={{ fontSize: 14, color: '#a3d9c1' }}>ج.م / شهرياً</span>
-          </div>
-
-          <ul style={{ display: 'grid', gap: 10, margin: '14px 0 24px', flex: 1, fontSize: 13 }}>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-400" /> كل ميزات باقة Growth
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-400" /> مكاتب استقبال غير محدودة تعمل معاً
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-400" /> دعم وإدارة حتى 5 فروع
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-400" /> تقارير متقدمة وتصدير ملفات Excel
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check className="h-4 w-4 text-emerald-400" /> أولوية في الدعم الفني وتدريب الموظفين
-            </li>
-          </ul>
-
-          <button
-            type="button"
-            className="btn btn--primary"
-            style={{ background: '#fff', color: '#043128', fontWeight: 800 }}
-            disabled={currentPlan === 'BUSINESS' && !isTrialActive}
-            onClick={() => {
-              setSelectedPlan('BUSINESS');
-              setShowPaymentModal(true);
-            }}
-          >
-            {currentPlan === 'BUSINESS' && !isTrialActive ? 'باقتك الحالية' : 'ترقية إلى Business'}
-          </button>
-        </div>
+              <button
+                type="button"
+                className={`btn ${cardDark ? 'btn--primary' : 'btn--secondary'}`}
+                style={cardDark ? { background: '#fff', color: '#043128', fontWeight: 800 } : undefined}
+                disabled={!allowSubscribe}
+                onClick={() => openPaymentModal(planId)}
+              >
+                {isCurrent ? (isTrialActive ? `تفعيل باقة ${planConfig.nameAr}` : 'باقتك الحالية') : `الاشتراك في ${planConfig.nameAr}`}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Subscription Invoices History */}
@@ -273,16 +325,19 @@ export function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                {subscriptions.map((sub) => (
-                  <tr key={sub.id}>
-                    <td>{new Date(sub.createdAt).toLocaleDateString('ar-EG')}</td>
-                    <td><b>{sub.plan}</b></td>
-                    <td>{sub.amount} ج.م</td>
-                    <td>{sub.paymentMethod === 'VODAFONE_CASH' ? 'فودافون كاش' : sub.paymentMethod === 'INSTAPAY' ? 'إنستاباي' : 'كاش'}</td>
-                    <td><code style={{ fontSize: 11 }}>{sub.paymentReference}</code></td>
-                    <td><span className="badge badge--ok">مفعل</span></td>
-                  </tr>
-                ))}
+                {subscriptions.map((sub) => {
+                  const status = STATUS_LABELS[sub.status] ?? { ar: sub.status, ok: false };
+                  return (
+                    <tr key={sub.id}>
+                      <td>{new Date(sub.createdAt).toLocaleDateString('ar-EG')}</td>
+                      <td><b>{getPlanConfig(sub.plan).nameAr}</b></td>
+                      <td>{sub.amount} ج.م</td>
+                      <td>{sub.paymentMethod === 'VODAFONE_CASH' ? 'فودافون كاش' : sub.paymentMethod === 'INSTAPAY' ? 'إنستاباي' : 'كاش'}</td>
+                      <td><code style={{ fontSize: 11 }}>{sub.paymentReference}</code></td>
+                      <td><span className={`badge ${status.ok ? 'badge--ok' : 'badge--warn'}`}>{status.ar}</span></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -294,54 +349,42 @@ export function BillingPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 100, padding: 16 }}>
           <div className="card" style={{ maxWidth: 460, width: '100%', padding: 24 }}>
             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>
-              تأكيد ترقية الاشتراك إلى {selectedPlan}
+              تأكيد تفعيل الاشتراك في باقة {selectedConfig.nameAr}
             </h3>
             <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 18 }}>
-              المبلغ المطلوب: <b>{selectedPlan === 'BUSINESS' ? '500' : '299'} ج.م / شهر</b>
+              المبلغ المطلوب: <b>{money(selectedConfig.priceEgp)} / شهر</b>
             </p>
 
             <div style={{ display: 'grid', gap: 14 }}>
               <div>
                 <label className="field-label" style={{ display: 'block', marginBottom: 6 }}>طريقة الدفع (مصر):</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                  <button
-                    type="button"
-                    className={`btn ${selectedPaymentMethod === 'VODAFONE_CASH' ? 'btn--primary' : 'btn--ghost'}`}
-                    style={{ fontSize: 12, padding: 8 }}
-                    onClick={() => setSelectedPaymentMethod('VODAFONE_CASH')}
-                  >
-                    فودافون كاش
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${selectedPaymentMethod === 'INSTAPAY' ? 'btn--primary' : 'btn--ghost'}`}
-                    style={{ fontSize: 12, padding: 8 }}
-                    onClick={() => setSelectedPaymentMethod('INSTAPAY')}
-                  >
-                    إنستاباي
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${selectedPaymentMethod === 'CASH' ? 'btn--primary' : 'btn--ghost'}`}
-                    style={{ fontSize: 12, padding: 8 }}
-                    onClick={() => setSelectedPaymentMethod('CASH')}
-                  >
-                    فيزا / كارت
-                  </button>
+                  {(Object.keys(billingConfig.paymentAccounts) as (keyof typeof billingConfig.paymentAccounts)[]).map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      className={`btn ${selectedPaymentMethod === method ? 'btn--primary' : 'btn--ghost'}`}
+                      style={{ fontSize: 12, padding: 8 }}
+                      onClick={() => setSelectedPaymentMethod(method)}
+                    >
+                      {billingConfig.paymentAccounts[method].displayName}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {selectedPaymentMethod === 'VODAFONE_CASH' && (
+              {selectedPaymentMethod !== 'CASH' && (
                 <div style={{ background: '#f5f7f6', padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  <p>يرجى تحويل المبلغ لمحفظة فودافون كاش رقم: <b>01012345678</b></p>
-                  <p style={{ color: '#6b7280', marginTop: 4 }}>ثم اكتب رقم المحفظة المحول منها بالأسفل:</p>
+                  <p>
+                    يرجى تحويل {money(selectedConfig.priceEgp)} على {billingConfig.paymentAccounts[selectedPaymentMethod].displayName}:{' '}
+                    <b>{billingConfig.paymentAccounts[selectedPaymentMethod].accountNumber}</b>
+                  </p>
+                  <p style={{ color: '#6b7280', marginTop: 4 }}>ثم اكتب رقم التحويل أو المرجع بالأسفل لإتمام تفعيل الاشتراك:</p>
                 </div>
               )}
-
-              {selectedPaymentMethod === 'INSTAPAY' && (
+              {selectedPaymentMethod === 'CASH' && (
                 <div style={{ background: '#f5f7f6', padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  <p>يرجى التحويل على عنوان إنستاباي: <b>madar@instapay</b></p>
-                  <p style={{ color: '#6b7280', marginTop: 4 }}>ثم اكتب اسم الحساب أو رقم المرجع بالأسفل:</p>
+                  <p>تدفع الاشتراك نقداً، ثم تُفعَّل الباقة يدوياً بعد تأكيد الاستلام مع فريق مدار.</p>
                 </div>
               )}
 

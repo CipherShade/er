@@ -11,6 +11,9 @@ export const TENANT_PLANS = {
   GROWTH: 'GROWTH',
   BUSINESS: 'BUSINESS',
   ENTERPRISE: 'ENTERPRISE',
+  ESSENTIAL: 'ESSENTIAL',
+  CONTROL: 'CONTROL',
+  MULTI_BRANCH: 'MULTI_BRANCH',
 } as const;
 export const TenantPlan = TENANT_PLANS;
 export type TenantPlan = (typeof TENANT_PLANS)[keyof typeof TENANT_PLANS];

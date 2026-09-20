@@ -44,9 +44,12 @@ type AuditLogEntry = {
 
 const PLAN_LABELS: Record<string, { ar: string; tone: 'primary' | 'accent' | 'success' | 'muted' | 'warning' | 'danger' }> = {
   FREE_TRIAL: { ar: 'تجريبي', tone: 'warning' },
-  GROWTH: { ar: 'نمو', tone: 'primary' },
-  BUSINESS: { ar: 'أعمال', tone: 'accent' },
-  ENTERPRISE: { ar: 'مؤسسي', tone: 'success' },
+  ESSENTIAL: { ar: 'الأساس', tone: 'primary' },
+  CONTROL: { ar: 'السيطرة', tone: 'accent' },
+  MULTI_BRANCH: { ar: 'متعدد الفروع (داخلي)', tone: 'success' },
+  GROWTH: { ar: 'الأساس (سابق)', tone: 'primary' },
+  BUSINESS: { ar: 'السيطرة (سابق)', tone: 'accent' },
+  ENTERPRISE: { ar: 'متعدد الفروع (سابق)', tone: 'success' },
 };
 
 function planLabel(plan: string) {

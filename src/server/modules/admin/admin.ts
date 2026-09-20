@@ -105,6 +105,8 @@ const adminRoutes: FastifyPluginAsync = async (app) => {
             trialEndsAt: true,
             maxDesks: true,
             maxBranches: true,
+            maxUsers: true,
+            visitLimit: true,
             createdAt: true,
             _count: {
               select: { users: true, students: true, sessions: true },

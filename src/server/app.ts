@@ -21,6 +21,7 @@ import settlementRoutes from './modules/settlements/settlements.js';
 import reportRoutes from './modules/reports/reports.js';
 import userRoutes from './modules/users/users.js';
 import subscriptionRoutes from './modules/subscriptions/subscriptions.js';
+import publicPlanRoutes from './modules/subscriptions/publicPlans.js';
 import adminRoutes from './modules/admin/admin.js';
 
 const REDACT_PATHS = [
@@ -111,6 +112,7 @@ export function buildApp(options?: BuildAppOptions): FastifyInstance {
   app.register(reportRoutes, { prefix: '/api/reports' });
   app.register(userRoutes, { prefix: '/api/users' });
   app.register(subscriptionRoutes, { prefix: '/api/subscriptions' });
+  app.register(publicPlanRoutes, { prefix: '/api' });
   app.register(adminRoutes, { prefix: '/api/admin' });
 
   if (config.nodeEnv === 'production') {

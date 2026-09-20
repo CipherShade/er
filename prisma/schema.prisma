@@ -18,7 +18,14 @@ enum TenantPlan {
   GROWTH
   BUSINESS
   ENTERPRISE
+  ESSENTIAL
+  CONTROL
+  MULTI_BRANCH
 }
+/// Enum values are append-only in PostgreSQL; legacy values (GROWTH/BUSINESS/
+/// ENTERPRISE) must stay ABOVE the new values so the database order matches the
+/// migration's ADD VALUE appends. The migration backfills GROWTH→ESSENTIAL,
+/// BUSINESS→CONTROL, ENTERPRISE→MULTI_BRANCH.
 
 enum SubscriptionStatus {
   TRIALING
@@ -76,6 +83,8 @@ model Tenant {
   isActive              Boolean                @default(true) @map("is_active")
   maxDesks              Int                    @default(1) @map("max_desks")
   maxBranches           Int                    @default(1) @map("max_branches")
+  maxUsers              Int                    @default(3) @map("max_users")
+  visitLimit            Int?                   @map("visit_limit")
   createdAt             DateTime               @default(now()) @map("created_at")
   updatedAt             DateTime               @default(now()) @updatedAt @map("updated_at")
 

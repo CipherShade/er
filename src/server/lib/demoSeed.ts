@@ -11,6 +11,7 @@ import {
   SubscriptionStatus,
   TenantPlan,
 } from '../../shared/constants/index.js';
+import { getPlanConfig } from '../../shared/constants/plans.js';
 import * as argon2 from 'argon2';
 
 function norm(text: string | null | undefined): string {
@@ -227,7 +228,7 @@ async function seedPlatformTenants(prisma: PrismaClient, superAdminPassword: str
       name: 'سنتر النيل للإبداع',
       owner: 'أ/ محمد عادل',
       ownerPhone: '01111111111',
-      plan: TenantPlan.BUSINESS,
+      plan: TenantPlan.CONTROL,
       maxDesks: 4,
       trialEndsAt: null,
       isActive: true,
@@ -239,8 +240,8 @@ async function seedPlatformTenants(prisma: PrismaClient, superAdminPassword: str
       ],
       teacher: { fullName: 'أ/ شيماء حسن البرنس', phone: '01155550001', subject: 'فيزياء', fee: 15 },
       subscriptions: [
-        { plan: TenantPlan.GROWTH, status: SubscriptionStatus.CANCELED, amount: 299, paymentMethod: PaymentMethod.CASH, paymentReference: 'CR-2026-07', periodStart: daysAgo(75), periodEnd: daysAgo(45) },
-        { plan: TenantPlan.BUSINESS, status: SubscriptionStatus.ACTIVE, amount: 500, paymentMethod: PaymentMethod.INSTAPAY, paymentReference: 'SUB-BIZ-2026', periodStart: daysAgo(45), periodEnd: plusDays(320) },
+        { plan: TenantPlan.ESSENTIAL, status: SubscriptionStatus.CANCELED, amount: 499, paymentMethod: PaymentMethod.CASH, paymentReference: 'CR-2026-07', periodStart: daysAgo(75), periodEnd: daysAgo(45) },
+        { plan: TenantPlan.CONTROL, status: SubscriptionStatus.ACTIVE, amount: 1199, paymentMethod: PaymentMethod.INSTAPAY, paymentReference: 'SUB-CTL-2026', periodStart: daysAgo(45), periodEnd: plusDays(320) },
       ],
     },
     {
@@ -248,7 +249,7 @@ async function seedPlatformTenants(prisma: PrismaClient, superAdminPassword: str
       name: 'مركز الجيزة هايتس',
       owner: 'أ/ هالة فاروق',
       ownerPhone: '01122222222',
-      plan: TenantPlan.ENTERPRISE,
+      plan: TenantPlan.CONTROL,
       maxDesks: 8,
       trialEndsAt: null,
       isActive: true,
@@ -259,7 +260,7 @@ async function seedPlatformTenants(prisma: PrismaClient, superAdminPassword: str
       ],
       teacher: { fullName: 'أ/ حسن عرفة سلامة', phone: '01155550002', subject: 'رياضيات', fee: 20 },
       subscriptions: [
-        { plan: TenantPlan.ENTERPRISE, status: SubscriptionStatus.ACTIVE, amount: 1200, paymentMethod: PaymentMethod.VODAFONE_CASH, paymentReference: 'SUB-ENT-2026-08', periodStart: daysAgo(60), periodEnd: plusDays(305) },
+        { plan: TenantPlan.CONTROL, status: SubscriptionStatus.ACTIVE, amount: 1199, paymentMethod: PaymentMethod.VODAFONE_CASH, paymentReference: 'SUB-CTL-2026-08', periodStart: daysAgo(60), periodEnd: plusDays(305) },
       ],
     },
     {
@@ -311,6 +312,8 @@ async function seedPlatformTenants(prisma: PrismaClient, superAdminPassword: str
         isActive: spec.isActive,
         maxDesks: spec.maxDesks,
         maxBranches: 1,
+        maxUsers: getPlanConfig(spec.plan).limits.maxUsers,
+        visitLimit: getPlanConfig(spec.plan).limits.visitLimit,
         trialEndsAt: spec.trialEndsAt,
       },
     });
@@ -573,10 +576,12 @@ async function seedMainCenter(
       slug: 'main-center',
       ownerName: 'أ/ محمود الشريف',
       ownerPhone: '01000000000',
-      plan: TenantPlan.GROWTH,
+      plan: TenantPlan.ESSENTIAL,
       isActive: true,
       maxDesks: 3,
       maxBranches: 1,
+      maxUsers: getPlanConfig(TenantPlan.ESSENTIAL).limits.maxUsers,
+      visitLimit: getPlanConfig(TenantPlan.ESSENTIAL).limits.visitLimit,
       trialEndsAt: plusDays(7),
     },
   });
@@ -652,9 +657,9 @@ async function seedMainCenter(
     const previous = await prisma.subscription.create({
       data: {
         tenantId: tenant.id,
-        plan: TenantPlan.GROWTH,
+        plan: TenantPlan.ESSENTIAL,
         status: SubscriptionStatus.EXPIRED,
-        amount: dec(299),
+        amount: dec(499),
         currency: 'EGP',
         paymentMethod: PaymentMethod.CASH,
         paymentReference: 'REF-2026-08',
@@ -668,15 +673,15 @@ async function seedMainCenter(
       action: 'SUBSCRIPTION_CREATED',
       entityType: 'SUBSCRIPTION',
       entityId: previous.id,
-      amount: 299,
-      metadata: { plan: TenantPlan.GROWTH, paymentMethod: PaymentMethod.CASH },
+      amount: 499,
+      metadata: { plan: TenantPlan.ESSENTIAL, paymentMethod: PaymentMethod.CASH },
     });
     const active = await prisma.subscription.create({
       data: {
         tenantId: tenant.id,
-        plan: TenantPlan.GROWTH,
+        plan: TenantPlan.ESSENTIAL,
         status: SubscriptionStatus.ACTIVE,
-        amount: dec(299),
+        amount: dec(499),
         currency: 'EGP',
         paymentMethod: PaymentMethod.CASH,
         paymentReference: 'REF-DEMO-001',
@@ -690,8 +695,8 @@ async function seedMainCenter(
       action: 'SUBSCRIPTION_RENEWED',
       entityType: 'SUBSCRIPTION',
       entityId: active.id,
-      amount: 299,
-      metadata: { plan: TenantPlan.GROWTH, paymentMethod: PaymentMethod.CASH },
+      amount: 499,
+      metadata: { plan: TenantPlan.ESSENTIAL, paymentMethod: PaymentMethod.CASH },
     });
   }
 

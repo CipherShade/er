@@ -1,7 +1,8 @@
 import argon2 from 'argon2';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { FastifyPluginAsync } from 'fastify';
-import { Role } from '../../../shared/constants/index.js';
+import { Role, TenantPlan } from '../../../shared/constants/index.js';
+import { PURCHASABLE_PLAN_IDS, TRIAL_DAYS, getPlanConfig } from '../../../shared/constants/plans.js';
 import { prisma } from '../../lib/prisma.js';
 import { config } from '../../config/index.js';
 import { recordAuditEntry } from '../reports/audit.js';
@@ -28,7 +29,7 @@ type RegisterCenterBody = {
   ownerPhone: string;
   username: string;
   password: string;
-  plan?: 'GROWTH' | 'BUSINESS';
+  plan?: 'ESSENTIAL' | 'CONTROL';
 };
 
 const publicUserSelect = {
@@ -112,7 +113,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           ownerPhone: { type: 'string', pattern: '^(010|011|012|015)[0-9]{8}$' },
           username: { type: 'string', minLength: 3, maxLength: 50, pattern: '^[a-zA-Z0-9_-]+$' },
           password: { type: 'string', minLength: 8, maxLength: 200 },
-          plan: { type: 'string', enum: ['GROWTH', 'BUSINESS'] },
+          plan: { type: 'string', enum: PURCHASABLE_PLAN_IDS as string[] },
         },
         additionalProperties: false,
       },
@@ -126,9 +127,11 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    const plan = request.body.plan || 'GROWTH';
-    const trialDays = 14;
-    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+    const plan = request.body.plan && PURCHASABLE_PLAN_IDS.includes(request.body.plan)
+      ? request.body.plan
+      : TenantPlan.ESSENTIAL;
+    const planConfig = getPlanConfig(plan);
+    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
     const slugSuffix = Math.random().toString(36).substring(2, 7);
     const slug = `center-${slugSuffix}`;
 
@@ -146,11 +149,13 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           slug,
           ownerName: request.body.ownerName,
           ownerPhone: request.body.ownerPhone,
-          plan: plan === 'BUSINESS' ? 'BUSINESS' : 'GROWTH',
+          plan: plan as TenantPlan,
           trialEndsAt,
           isActive: true,
-          maxDesks: plan === 'BUSINESS' ? 10 : 1,
-          maxBranches: plan === 'BUSINESS' ? 5 : 1,
+          maxDesks: planConfig.limits.maxDesks,
+          maxBranches: planConfig.limits.maxBranches,
+          maxUsers: planConfig.limits.maxUsers,
+          visitLimit: planConfig.limits.visitLimit,
         },
       });
 

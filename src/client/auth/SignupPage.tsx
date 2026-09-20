@@ -3,6 +3,8 @@ import { Building2, UserRound, Phone, KeyRound, ArrowRight, ArrowLeft, Check, Sp
 import { useAuth } from './AuthContext';
 import { Banner } from '../components/ui/kit';
 import { EGYPTIAN_MOBILE_REGEX } from '../../shared/constants/index';
+import { PURCHASABLE_PLAN_IDS, PLANS } from '../../shared/constants/plans';
+import type { TenantPlan } from '../../shared/constants/index';
 
 interface SignupPageProps {
   onNavigateLogin?: () => void;
@@ -14,7 +16,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
 
   const [step, setStep] = useState<1 | 2>(1);
   const [centerName, setCenterName] = useState('');
-  const [plan, setPlan] = useState<'GROWTH' | 'BUSINESS'>('GROWTH');
+  const [plan, setPlan] = useState<'ESSENTIAL' | 'CONTROL'>(PURCHASABLE_PLAN_IDS[0] as 'ESSENTIAL' | 'CONTROL');
 
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
@@ -134,41 +136,32 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
               </span>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div
-                  onClick={() => setPlan('GROWTH')}
-                  style={{
-                    border: `2px solid ${plan === 'GROWTH' ? '#0e7c56' : '#e2e0dc'}`,
-                    background: plan === 'GROWTH' ? '#f0faf5' : '#fff',
-                    borderRadius: 12,
-                    padding: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <b style={{ fontSize: 15 }}>Growth</b>
-                    {plan === 'GROWTH' && <Check className="h-4 w-4 text-emerald-700" />}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0e7c56', margin: '4px 0' }}>299 ج.م/شهر</div>
-                  <small style={{ fontSize: 10, color: '#6b7280' }}>مكتب استقبال واحد + فرع</small>
-                </div>
-
-                <div
-                  onClick={() => setPlan('BUSINESS')}
-                  style={{
-                    border: `2px solid ${plan === 'BUSINESS' ? '#0e7c56' : '#e2e0dc'}`,
-                    background: plan === 'BUSINESS' ? '#f0faf5' : '#fff',
-                    borderRadius: 12,
-                    padding: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <b style={{ fontSize: 15 }}>Business</b>
-                    {plan === 'BUSINESS' && <Check className="h-4 w-4 text-emerald-700" />}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0e7c56', margin: '4px 0' }}>500 ج.م/شهر</div>
-                  <small style={{ fontSize: 10, color: '#6b7280' }}>مكاتب متزامنة + فروع</small>
-                </div>
+                {PURCHASABLE_PLAN_IDS.map((planId) => {
+                  const planConfig = PLANS[planId as TenantPlan];
+                  const isSelected = plan === planId;
+                  return (
+                    <div
+                      key={planId}
+                      onClick={() => setPlan(planId as 'ESSENTIAL' | 'CONTROL')}
+                      style={{
+                        border: `2px solid ${isSelected ? '#0e7c56' : '#e2e0dc'}`,
+                        background: isSelected ? '#f0faf5' : '#fff',
+                        borderRadius: 12,
+                        padding: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <b style={{ fontSize: 15 }}>{planConfig.nameAr}</b>
+                        {isSelected && <Check className="h-4 w-4 text-emerald-700" />}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0e7c56', margin: '4px 0' }}>
+                        {planConfig.priceEgp} ج.م/شهر
+                      </div>
+                      <small style={{ fontSize: 10, color: '#6b7280' }}>{planConfig.taglineAr}</small>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

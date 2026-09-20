@@ -27,7 +27,7 @@ interface LandingPageProps {
 export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeTab, setActiveTab] = useState<'reception' | 'payments' | 'teachers' | 'reports' | 'staff' | 'branches'>('reception');
+  const [activeTab, setActiveTab] = useState<'reception' | 'payments' | 'teachers' | 'reports' | 'staff' | 'desks'>('reception');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isPlayingVsl, setIsPlayingVsl] = useState(false);
 
@@ -266,8 +266,8 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
 
             <article className="lp-card">
               <span className="lp-ico"><Building2 className="h-5 w-5" /></span>
-              <h3 style={{ marginTop: 16 }}>تعدد الفروع والمكاتب</h3>
-              <p style={{ color: 'var(--lp-ink-2)', marginTop: 8 }}>إدارة أكثر من مكتب استقبال وفرع تعليمي من حساب مركزي واحد.</p>
+              <h3 style={{ marginTop: 16 }}>مكاتب استقبال متزامنة</h3>
+              <p style={{ color: 'var(--lp-ink-2)', marginTop: 8 }}>عدة مكاتب تعمل معاً في نفس الوقت بمنع تكرار التسجيل ومتابعة كل خزينة على حدة.</p>
             </article>
           </div>
         </div>
@@ -348,10 +348,10 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
               </button>
               <button
                 type="button"
-                className={`lp-tab ${activeTab === 'branches' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('branches')}
+                className={`lp-tab ${activeTab === 'desks' ? 'is-active' : ''}`}
+                onClick={() => setActiveTab('desks')}
               >
-                <Building2 className="h-4 w-4" /> الفروع <span className="lp-tag">Business</span>
+                <Building2 className="h-4 w-4" /> مكاتب متزامنة <span className="lp-tag">Control</span>
               </button>
             </div>
 
@@ -458,25 +458,25 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
                 </div>
               )}
 
-              {activeTab === 'branches' && (
+              {activeTab === 'desks' && (
                 <div className="lp-tabpanel">
                   <div>
-                    <h3 style={{ fontSize: 24, marginBottom: 16 }}>فرع واحد النهاردة. أكتر بكرة.</h3>
+                    <h3 style={{ fontSize: 24, marginBottom: 16 }}>مكاتب استقبال شغالة بالتوازي بدون تصادم.</h3>
                     <ul className="lp-checks">
-                      <li>إدارة مركزية لعدة فروع مع فصل كامل للحسابات والورديات.</li>
-                      <li>تقارير مجمعة لأداء جميع الفروع على مستوى الإدارة.</li>
-                      <li>مكاتب استقبال غير محدودة تعمل بالتوازي.</li>
+                      <li>فتح عدة ورديات على مكاتب مختلفة في نفس الوقت.</li>
+                      <li>منع تكرار تسجيل الطالب في نفس الحصة عبر أي مكتب.</li>
+                      <li>متابعة خزائن المكاتب والتحصيل كل مكتب على حدة.</li>
                     </ul>
                   </div>
                   <div className="lp-win" style={{ padding: 18, background: '#fff' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: 10, background: '#f5f7f6', borderRadius: 8 }}>
-                        <b>الفرع الرئيسي (الدقي)</b>
-                        <span style={{ color: '#0e7c56', fontWeight: 700 }}>186 طالب اليوم</span>
+                        <b>مكتب الاستقبال 1</b>
+                        <span style={{ color: '#0e7c56', fontWeight: 700 }}>98 طالب اليوم</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: 10, background: '#f5f7f6', borderRadius: 8 }}>
-                        <b>فرع مدينة نصر</b>
-                        <span style={{ color: '#0e7c56', fontWeight: 700 }}>142 طالب اليوم</span>
+                        <b>مكتب الاستقبال 2</b>
+                        <span style={{ color: '#0e7c56', fontWeight: 700 }}>88 طالب اليوم</span>
                       </div>
                     </div>
                   </div>
@@ -540,19 +540,19 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
           </div>
 
           <div className="lp-plans">
-            {/* Growth Tier */}
+            {/* Essential Tier */}
             <article className="lp-plan">
-              <h3 style={{ fontSize: 24 }}>Growth</h3>
+              <h3 style={{ fontSize: 24 }}>الأساس</h3>
               <p style={{ color: 'var(--lp-ink-2)', marginTop: 6, minHeight: 48 }}>
                 كل الأساسيات اللي محتاجها لإدارة سنترك اليومية بكفاءة عالية.
               </p>
               <div className="lp-price">
-                <b>299</b>
+                <b>499</b>
                 <span style={{ fontSize: 16 }}>جنيه / شهرياً</span>
               </div>
               <ul className="lp-checks" style={{ marginBottom: 24 }}>
                 <li>النظام التشغيلي الكامل</li>
-                <li>مكتب استقبال واحد</li>
+                <li>حتى مكتبين للاستقبال يعملان معاً</li>
                 <li>إدارة الطلاب والمدرسين والحصص</li>
                 <li>خزينة الوردية وتسويات المدرسين</li>
                 <li>التقارير اليومية والمالية</li>
@@ -562,23 +562,23 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
               </button>
             </article>
 
-            {/* Business Tier */}
+            {/* Control Tier */}
             <article className="lp-plan lp-plan--featured">
-              <span className="lp-plan-flag">الأكثر طلباً للسناتر</span>
-              <h3 style={{ fontSize: 24 }}>Business</h3>
+              <span className="lp-plan-flag">الأكثر طلباً للسناتر الكبيرة</span>
+              <h3 style={{ fontSize: 24 }}>السيطرة</h3>
               <p style={{ opacity: 0.85, marginTop: 6, minHeight: 48 }}>
-                للسناتر الكبيرة والتي تحتاج تشغيل متقدم وإدارة فروع متعددة.
+                للسناتر متعددة المكاتب التي تحتاج سيطرة كاملة على التشغيل والمالية.
               </p>
               <div className="lp-price">
-                <b>500</b>
+                <b>1199</b>
                 <span style={{ fontSize: 16, opacity: 0.85 }}>جنيه / شهرياً</span>
               </div>
               <ul className="lp-checks" style={{ marginBottom: 24 }}>
-                <li style={{ color: '#fff' }}>كل مميزات خطة Growth</li>
-                <li style={{ color: '#fff' }}>مكاتب استقبال متزامنة غير محدودة</li>
-                <li style={{ color: '#fff' }}>دعم وإدارة عدة فروع</li>
-                <li style={{ color: '#fff' }}>تقارير متقدمة وتصدير بيانات Excel</li>
-                <li style={{ color: '#fff' }}>دعم فني وأولوية تدريب الموظفين</li>
+                <li style={{ color: '#fff' }}>كل ميزات باقة الأساس</li>
+                <li style={{ color: '#fff' }}>مكاتب استقبال متزامنة حتى 8 مكاتب</li>
+                <li style={{ color: '#fff' }}>10 آلاف زيارة طالب محسوبة داخل الباقة</li>
+                <li style={{ color: '#fff' }}>تقارير متقدمة وتصدير البيانات</li>
+                <li style={{ color: '#fff' }}>دعم فني أولوية وتدريب الموظفين</li>
               </ul>
               <button type="button" onClick={handleCta} className="lp-btn lp-btn-light lp-btn-block lp-btn-lg">
                 ابدأ تجربتك المجانية
@@ -672,7 +672,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
             {[
               {
                 q: 'هل مدار مناسب لحجم السنتر بتاعي؟',
-                a: 'نعم، مدار مصمم لخدمة السناتر الصغيرة التي تبدأ بمكتب واحد وقاعة وحتى الصروح الكبيرة متعددة القاعات والفروع.',
+                a: 'نعم، مدار مصمم لخدمة السناتر الصغيرة التي تبدأ بمكتب واحد وقاعة وحتى السناتر الكبيرة متعددة المكاتب والقاعات.',
               },
               {
                 q: 'هل يحتاج مدار إلى أجهزة كمبيوتر بمواصفات معينة؟',
