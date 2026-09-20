@@ -666,6 +666,34 @@ select {
     background: rgba(12, 18, 16, 0.5);
     z-index: 45;
   }
+
+  /* The mobile drawer always opens fully expanded — the desktop
+     "collapsed" preference must not strip the nav labels on phones. */
+  .sidebar--collapsed {
+    width: min(var(--sidebar-w), 82vw);
+  }
+
+  .sidebar--collapsed .nav-group-title {
+    text-align: start;
+  }
+
+  .sidebar--collapsed .nav-item {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+
+  .sidebar--collapsed .nav-item span {
+    display: inline;
+  }
+
+  .sidebar--collapsed .nav-item .nav-badge {
+    position: static;
+    inset: auto;
+  }
+
+  .sidebar--collapsed .sidebar-foot > * {
+    justify-content: flex-start;
+  }
 }
 
 .sidebar-backdrop {
