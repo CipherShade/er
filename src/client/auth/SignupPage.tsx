@@ -86,7 +86,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
   };
 
   return (
-    <main className="login-bg" dir="rtl">
+    <main className="login-bg">
       <div className="login-card" style={{ maxWidth: 480 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div className="login-logo" style={{ cursor: 'pointer', margin: 0 }} onClick={onNavigateLanding}>

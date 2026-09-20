@@ -218,7 +218,7 @@ export function SuperAdminPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="page-container" dir="rtl">
+    <div className="page-container">
       {/* Header */}
       <div className="page-header">
         <div>

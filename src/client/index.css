@@ -354,6 +354,9 @@ select {
   gap: 8px;
   white-space: nowrap;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
 }
 
 .breadcrumb b {
@@ -367,6 +370,7 @@ select {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: none;
 }
 
 .icon-btn {

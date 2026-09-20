@@ -3,7 +3,7 @@
   "appSubtitle": "Center Management Platform",
   "tagline": "Egyptian tutoring center management",
   "center": "Main Center",
-  "roleName": { "admin": "Administrator", "receptionist": "Receptionist" },
+  "roleName": { "admin": "Administrator", "receptionist": "Receptionist", "super_admin": "Platform Admin" },
   "navigation": {
     "ariaLabel": "Main navigation",
     "menu": "Menu",

@@ -3,7 +3,7 @@
   "appSubtitle": "منصة إدارة السنة",
   "tagline": "إدارة سناتر الدروس الخصوصية في مصر",
   "center": "المركز الرئيسي",
-  "roleName": { "admin": "مدير النظام", "receptionist": "موظف الاستقبال" },
+  "roleName": { "admin": "مدير النظام", "receptionist": "موظف الاستقبال", "super_admin": "مدير المنصة" },
   "navigation": {
     "ariaLabel": "التنقل الرئيسي",
     "menu": "القائمة",

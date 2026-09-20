@@ -120,7 +120,7 @@ export function BillingPage() {
 
   if (loading) {
     return (
-      <div className="page" dir="rtl" style={{ padding: 32, textAlign: 'center' }}>
+      <div className="page" style={{ padding: 32, textAlign: 'center' }}>
         <p style={{ color: '#6b7280' }}>جاري تحميل بيانات الاشتراك والفوترة...</p>
       </div>
     );
@@ -132,7 +132,7 @@ export function BillingPage() {
   const usageBanner = usage && usage.limit !== null && usage.level !== 'ok' ? usage : null;
 
   return (
-    <div className="page" dir="rtl">
+    <div className="page">
       <div className="page-head">
         <div>
           <h1 className="page-title">إدارة الاشتراك والفوترة</h1>
