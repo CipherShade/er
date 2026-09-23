@@ -167,15 +167,15 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         },
       });
 
-      // The subscription is activated on the INSTAPAY payment the owner just
-      // submitted: their Instapay account name is stored as the payment proof.
+      // The subscription is created PENDING: the owner verifies the INSTAPAY
+      // payment (payer instapay account stored as the proof) before activation.
       const periodStart = new Date();
       const periodEnd = new Date(Date.now() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
       await tx.subscription.create({
         data: {
           tenantId: tenant.id,
           plan: plan as TenantPlan,
-          status: SubscriptionStatus.ACTIVE,
+          status: SubscriptionStatus.PENDING,
           amount: new Prisma.Decimal(planConfig.priceEgp ?? 0),
           currency: 'EGP',
           paymentMethod: PaymentMethod.INSTAPAY,

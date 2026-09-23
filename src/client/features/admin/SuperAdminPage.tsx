@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, TrendingUp, AlertTriangle, CheckCircle2, Clock, RefreshCw, Search, ShieldOff, ShieldCheck, CalendarPlus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Building2, Users, TrendingUp, AlertTriangle, CheckCircle2, Clock, RefreshCw, Search, ShieldOff, ShieldCheck, CalendarPlus, ChevronDown, ChevronUp, Wallet, BadgeCheck, Ban } from 'lucide-react';
 import { Metric, Pill, notify } from '../../components/ui/kit';
 import { api, money } from '../../lib/api';
 
@@ -38,6 +38,17 @@ type AuditLogEntry = {
   amount: string | null;
   createdAt: string;
   actor?: { username: string; fullName: string; role: string; tenant?: { id: string; name: string } | null } | null;
+};
+
+type PendingPayment = {
+  id: string;
+  plan: string;
+  amount: string;
+  currency: string;
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  createdAt: string;
+  tenant: { id: string; name: string; slug: string; plan: string };
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -131,7 +142,10 @@ export function SuperAdminPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [auditLoading, setAuditLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tenants' | 'audit'>('tenants');
+  const [activeTab, setActiveTab] = useState<'tenants' | 'audit' | 'payments'>('tenants');
+  const [payments, setPayments] = useState<PendingPayment[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
   const [extendTarget, setExtendTarget] = useState<TenantRow | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -187,6 +201,22 @@ export function SuperAdminPage() {
     if (activeTab === 'audit' && auditLogs.length === 0) void fetchAuditLogs();
   }, [activeTab, auditLogs.length, fetchAuditLogs]);
 
+  const fetchPendingPayments = useCallback(async () => {
+    setPaymentsLoading(true);
+    try {
+      const data = await api<{ subscriptions: PendingPayment[] }>('/subscriptions/pending');
+      setPayments(data.subscriptions);
+    } catch {
+      notify('فشل تحميل المدفوعات المعلقة', 'error');
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'payments') void fetchPendingPayments();
+  }, [activeTab, fetchPendingPayments]);
+
   // ── Actions ────────────────────────────────────────────────────────────
   const handleSuspend = async (tenant: TenantRow) => {
     const newState = !tenant.isActive;
@@ -213,6 +243,32 @@ export function SuperAdminPage() {
       void fetchTenants();
     } catch {
       notify('فشل تمديد الفترة التجريبية', 'error');
+    }
+  };
+
+  const handleVerifyPayment = async (payment: PendingPayment) => {
+    setActionId(payment.id);
+    try {
+      await api<unknown>(`/subscriptions/${payment.id}/verify`, { method: 'POST' });
+      notify(`تم تأكيد دفعة "${payment.tenant.name}" ✓`, 'success');
+      void fetchPendingPayments();
+    } catch {
+      notify('فشل تأكيد الدفعة', 'error');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleRejectPayment = async (payment: PendingPayment) => {
+    setActionId(payment.id);
+    try {
+      await api<unknown>(`/subscriptions/${payment.id}/reject`, { method: 'POST' });
+      notify(`تم رفض دفعة "${payment.tenant.name}"`, 'success');
+      void fetchPendingPayments();
+    } catch {
+      notify('فشل رفض الدفعة', 'error');
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -285,6 +341,15 @@ export function SuperAdminPage() {
         >
           <Users className="h-4 w-4" />
           سجل التدقيق
+        </button>
+        <button
+          className={`tab-btn${activeTab === 'payments' ? ' tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('payments')}
+          id="tab-payments"
+          aria-selected={activeTab === 'payments'}
+        >
+          <Wallet className="h-4 w-4" />
+          المدفوعات المعلقة ({payments.length})
         </button>
       </div>
 
@@ -444,6 +509,92 @@ export function SuperAdminPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Pending Payments Tab ─────────────────────────────────────────── */}
+      {activeTab === 'payments' && (
+        <div>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#78350f', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <AlertTriangle className="h-4 w-4" />
+            قارن المرجع الظاهر بالأسفل مع التحويلات الواردة في تطبيق إنستاباي قبل تأكيد الدفعة.
+          </div>
+
+          <div className="table-wrapper" role="region" aria-label="المدفوعات المعلقة">
+            {paymentsLoading ? (
+              <div style={{ padding: 32, textAlign: 'center' }}>
+                <span className="page-sub">جاري تحميل المدفوعات...</span>
+              </div>
+            ) : (
+              <table className="data-table" aria-label="المدفوعات قيد التأكيد">
+                <thead>
+                  <tr>
+                    <th scope="col">المركز</th>
+                    <th scope="col">الباقة</th>
+                    <th scope="col">المبلغ</th>
+                    <th scope="col">مرجع إنستاباي</th>
+                    <th scope="col">التاريخ</th>
+                    <th scope="col">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: 32 }}>
+                        <span className="page-sub">لا توجد مدفوعات معلقة — كل الاشتراكات مؤكدة ✓</span>
+                      </td>
+                    </tr>
+                  ) : (
+                    payments.map((payment) => {
+                      const pl = planLabel(payment.plan);
+                      const busy = actionId === payment.id;
+                      return (
+                        <tr key={payment.id}>
+                          <td>
+                            <strong>{payment.tenant.name}</strong>
+                            <br />
+                            <span className="page-sub" style={{ fontSize: 12 }}>{payment.tenant.slug}</span>
+                          </td>
+                          <td>
+                            <Pill tone={pl.tone}>{pl.ar}</Pill>
+                          </td>
+                          <td><b>{money(Number(payment.amount))}</b></td>
+                          <td>
+                            <code dir="ltr" style={{ fontSize: 12 }}>{payment.paymentReference ?? '—'}</code>
+                          </td>
+                          <td style={{ fontSize: 13 }}>{formatDate(payment.createdAt)}</td>
+                          <td>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              <button
+                                className="btn btn--primary"
+                                style={{ fontSize: 12, padding: '4px 12px', gap: 4 }}
+                                onClick={() => handleVerifyPayment(payment)}
+                                disabled={busy}
+                                aria-label={`تأكيد دفعة ${payment.tenant.name}`}
+                              >
+                                <BadgeCheck className="h-3 w-3" />
+                                {busy ? 'جاري...' : 'تأكيد'}
+                              </button>
+                              <button
+                                className="btn btn--danger"
+                                style={{ fontSize: 12, padding: '4px 12px', gap: 4 }}
+                                onClick={() => handleRejectPayment(payment)}
+                                disabled={busy}
+                                aria-label={`رفض دفعة ${payment.tenant.name}`}
+                              >
+                                <Ban className="h-3 w-3" />
+                                رفض
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ── Audit Log Tab ────────────────────────────────────────────────── */}

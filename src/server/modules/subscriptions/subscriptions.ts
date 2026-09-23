@@ -7,6 +7,7 @@ import {
   getPlanConfig,
 } from '../../../shared/constants/plans.js';
 import { prisma } from '../../lib/prisma.js';
+import { isValidUUID } from '../../lib/http.js';
 import { authenticate, requireRoles } from '../auth/auth.js';
 import { recordAuditEntry } from '../reports/audit.js';
 
@@ -160,11 +161,13 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
     const periodEnd = new Date(Date.now() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
     const result = await prisma.$transaction(async (tx) => {
+      // Upgrade payments are created PENDING and activated by a SUPER_ADMIN
+      // once the INSTAPAY transfer is verified against the reference.
       const subscription = await tx.subscription.create({
         data: {
           tenantId,
           plan: selectedPlan as TenantPlan,
-          status: SubscriptionStatus.ACTIVE,
+          status: SubscriptionStatus.PENDING,
           amount: new Prisma.Decimal(amount),
           currency: 'EGP',
           paymentMethod: request.body.paymentMethod,
@@ -207,6 +210,142 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         },
         tenant: result.tenant,
       },
+    });
+  });
+
+  // ── Super Admin: pending-payment verification queue ──────────────────────
+
+  // Every INSTAPAY subscription is recorded as PENDING until a SUPER_ADMIN
+  // verifies the transfer against the payer's reference. Centers keep working
+  // (non-blocking) but see a warning banner until the payment is confirmed.
+  app.get('/pending', {
+    preHandler: [authenticate, requireRoles(Role.SUPER_ADMIN)],
+  }, async (_request, reply) => {
+    const subscriptions = await prisma.subscription.findMany({
+      where: { status: SubscriptionStatus.PENDING },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { tenant: { select: { id: true, name: true, slug: true, plan: true } } },
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        subscriptions: subscriptions.map((sub) => ({
+          id: sub.id,
+          plan: sub.plan,
+          amount: sub.amount.toString(),
+          currency: sub.currency,
+          paymentMethod: sub.paymentMethod,
+          paymentReference: sub.paymentReference,
+          createdAt: sub.createdAt,
+          tenant: sub.tenant,
+        })),
+      },
+    });
+  });
+
+  app.post<{ Params: { id: string } }>('/:id/verify', {
+    preHandler: [authenticate, requireRoles(Role.SUPER_ADMIN)],
+  }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) {
+      return reply.code(400).send({
+        success: false,
+        error: { code: 'INVALID_ID', message: 'معرّف الاشتراك غير صالح.', messageEn: 'The subscription id is invalid.' },
+      });
+    }
+
+    const subscription = await prisma.subscription.findUnique({ where: { id: request.params.id } });
+    if (!subscription) {
+      return reply.code(404).send({
+        success: false,
+        error: { code: 'SUBSCRIPTION_NOT_FOUND', message: 'الاشتراك غير موجود.', messageEn: 'Subscription not found.' },
+      });
+    }
+    if (subscription.status !== SubscriptionStatus.PENDING) {
+      return reply.code(409).send({
+        success: false,
+        error: { code: 'ALREADY_VERIFIED', message: 'هذا الاشتراك ليس قيد التأكيد.', messageEn: 'This subscription is not pending verification.' },
+      });
+    }
+
+    const now = new Date();
+    const periodStart = now;
+    const periodEnd = new Date(now.getTime() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.subscription.update({
+        where: { id: subscription.id },
+        data: { status: SubscriptionStatus.ACTIVE, periodStart, periodEnd },
+      });
+      await tx.tenant.update({
+        where: { id: subscription.tenantId },
+        data: { isActive: true },
+      });
+      await recordAuditEntry({
+        actorId: request.user.sub,
+        shiftRegisterId: null,
+        action: 'SUBSCRIPTION_VERIFIED',
+        entityType: 'SUBSCRIPTION',
+        entityId: subscription.id,
+        amount: Number(subscription.amount),
+        metadata: { plan: subscription.plan, paymentMethod: subscription.paymentMethod, paymentReference: subscription.paymentReference },
+      }, tx);
+      return updated;
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        subscription: { ...result, amount: result.amount.toString() },
+      },
+    });
+  });
+
+  app.post<{ Params: { id: string } }>('/:id/reject', {
+    preHandler: [authenticate, requireRoles(Role.SUPER_ADMIN)],
+  }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) {
+      return reply.code(400).send({
+        success: false,
+        error: { code: 'INVALID_ID', message: 'معرّف الاشتراك غير صالح.', messageEn: 'The subscription id is invalid.' },
+      });
+    }
+
+    const subscription = await prisma.subscription.findUnique({ where: { id: request.params.id } });
+    if (!subscription) {
+      return reply.code(404).send({
+        success: false,
+        error: { code: 'SUBSCRIPTION_NOT_FOUND', message: 'الاشتراك غير موجود.', messageEn: 'Subscription not found.' },
+      });
+    }
+    if (subscription.status !== SubscriptionStatus.PENDING) {
+      return reply.code(409).send({
+        success: false,
+        error: { code: 'NOT_PENDING', message: 'هذا الاشتراك ليس قيد التأكيد.', messageEn: 'This subscription is not pending.' },
+      });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.subscription.update({
+        where: { id: subscription.id },
+        data: { status: SubscriptionStatus.CANCELED, periodEnd: new Date() },
+      });
+      await recordAuditEntry({
+        actorId: request.user.sub,
+        shiftRegisterId: null,
+        action: 'SUBSCRIPTION_REJECTED',
+        entityType: 'SUBSCRIPTION',
+        entityId: subscription.id,
+        amount: Number(subscription.amount),
+        metadata: { plan: subscription.plan, paymentReference: subscription.paymentReference },
+      }, tx);
+      return updated;
+    });
+
+    return reply.send({
+      success: true,
+      data: { subscription: { id: result.id, status: result.status } },
     });
   });
 };

@@ -19,6 +19,7 @@ export const TenantPlan = TENANT_PLANS;
 export type TenantPlan = (typeof TENANT_PLANS)[keyof typeof TENANT_PLANS];
 
 export const SUBSCRIPTION_STATUSES = {
+  PENDING: 'PENDING',
   TRIALING: 'TRIALING',
   ACTIVE: 'ACTIVE',
   PAST_DUE: 'PAST_DUE',

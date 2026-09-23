@@ -61,6 +61,10 @@ export function receptionistAuth(app: FastifyInstance): TestAuth {
   return { token: signToken(app, { sub: RECEPTIONIST_USER_ID, username: 'reception1', role: Role.RECEPTIONIST }) };
 }
 
+export function superAdminAuth(app: FastifyInstance): TestAuth {
+  return { token: signToken(app, { sub: validUUID('dddddddd-0000-0000-0000-000000000004'), username: 'superadmin', role: Role.SUPER_ADMIN }) };
+}
+
 export function tokens(app: FastifyInstance) {
   return {
     admin: adminAuth(app).token,

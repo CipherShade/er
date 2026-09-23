@@ -28,6 +28,7 @@ enum TenantPlan {
 /// BUSINESS→CONTROL, ENTERPRISE→MULTI_BRANCH.
 
 enum SubscriptionStatus {
+  PENDING
   TRIALING
   ACTIVE
   PAST_DUE

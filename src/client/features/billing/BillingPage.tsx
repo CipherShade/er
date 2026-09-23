@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, Sparkles, History, TriangleAlert, TrendingUp, ExternalLink } from 'lucide-react';
+import { Check, Sparkles, History, TriangleAlert, TrendingUp, ExternalLink, Clock } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { notify } from '../../components/ui/kit';
 import { InstapayQr } from '../../components/ui/InstapayQr';
@@ -36,6 +36,7 @@ type TenantDetails = {
 };
 
 const STATUS_LABELS: Record<string, { ar: string; ok: boolean }> = {
+  PENDING: { ar: 'قيد التأكيد', ok: false },
   ACTIVE: { ar: 'مفعل', ok: true },
   TRIALING: { ar: 'تجربة', ok: true },
   PAST_DUE: { ar: 'متأخر', ok: false },
@@ -138,6 +139,7 @@ export function BillingPage() {
   const usageBanner = usage && usage.limit !== null && usage.level !== 'ok' ? usage : null;
   const instapayAccount = billingConfig.paymentAccounts.INSTAPAY;
   const instapayLink = 'paymentLink' in instapayAccount && instapayAccount.paymentLink ? instapayAccount.paymentLink : null;
+  const pendingSubscription = subscriptions[0]?.status === 'PENDING' ? subscriptions[0] : null;
 
   return (
     <div className="page">
@@ -147,6 +149,25 @@ export function BillingPage() {
           <p className="page-sub">تفاصيل باقة السنتر الحالية، ترقية الاشتراك، وسجل المدفوعات بالجنيه المصري.</p>
         </div>
       </div>
+
+      {/* Pending INSTAPAY payment banner (payment awaiting verification) */}
+      {pendingSubscription && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: 18, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f59e0b', color: '#3b2400', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <Clock className="h-6 w-6" />
+          </div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <b style={{ fontSize: 15 }}>دفعتك قيد التأكيد</b>
+            <p style={{ fontSize: 13, color: '#78350f', margin: '2px 0 0' }}>
+              مبلغ {money(Number(pendingSubscription.amount))} عبر إنستاباي (المرجع: <code dir="ltr">{pendingSubscription.paymentReference}</code>).
+              سيُفعَّل اشتراكك فور تأكيد استلام الدفعة — النظام يعمل بكامل طاقته حتى ذلك الحين.
+            </p>
+          </div>
+          <span style={{ fontSize: 12, background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', borderRadius: 99, padding: '4px 12px', fontWeight: 700 }}>
+            بانتظار التأكيد
+          </span>
+        </div>
+      )}
 
       {/* Trial Alert Banner */}
       {isTrialActive && (
