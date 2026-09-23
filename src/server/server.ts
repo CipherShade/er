@@ -14,7 +14,7 @@ const io = new Server(app.server, {
 });
 
 import { execSync } from 'node:child_process';
-import { seedDemoData } from './lib/demoSeed.js';
+import { ensureSuperAdmin, seedDemoData } from './lib/demoSeed.js';
 
 attachSocketServer(app, io);
 
@@ -34,6 +34,7 @@ async function ensureDatabaseReady(): Promise<void> {
   try {
     app.log.info('Ensuring demo users and seed data are ready...');
     await seedDemoData(prisma);
+    await ensureSuperAdmin(prisma);
     app.log.info('Demo seed and credentials verification completed successfully.');
   } catch (seedErr) {
     app.log.error({ err: seedErr }, 'Failed during seedDemoData');
