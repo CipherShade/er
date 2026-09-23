@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Building2, UserRound, Phone, KeyRound, ArrowRight, ArrowLeft, Check, Sparkles, ExternalLink } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { Banner } from '../components/ui/kit';
+import { InstapayQr } from '../components/ui/InstapayQr';
 import { EGYPTIAN_MOBILE_REGEX } from '../../shared/constants/index';
 import { PURCHASABLE_PLAN_IDS, PLANS } from '../../shared/constants/plans';
 import { billingConfig } from '../lib/billingConfig';
@@ -297,9 +298,9 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
               </p>
             </div>
 
-            <div style={{ background: '#fff', border: '1px solid #e2e0dc', borderRadius: 14, padding: 16 }}>
-              <div style={{ display: 'grid', gap: 10 }}>
-                {instapayLink && (
+            <div style={{ background: '#fff', border: '1px solid #e2e0dc', borderRadius: 14, padding: 16, display: 'grid', gap: 10 }}>
+              <InstapayQr />
+              {instapayLink && (
                   <a
                     href={instapayLink}
                     target="_blank"
@@ -315,7 +316,6 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
                   <b dir="ltr" style={{ color: '#0e7c56' }}>{instapayAccount.accountNumber}</b>
                 </div>
               </div>
-            </div>
 
             <label className="field">
               <span className="field-label">اسم حسابك في إنستاباي (الذي دفعت منه) — إثبات الدفع *</span>

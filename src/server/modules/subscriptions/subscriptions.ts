@@ -12,8 +12,10 @@ import { recordAuditEntry } from '../reports/audit.js';
 
 type UpgradeBody = {
   plan: 'ESSENTIAL' | 'CONTROL';
+  /** Upgrades are Instapay-only, matching the signup payment flow. */
   paymentMethod: PaymentMethod;
-  paymentReference?: string | null;
+  /** The payer's Instapay account name (e.g. name@instapay), used as payment proof. */
+  paymentReference: string;
 };
 
 const SUBSCRIPTION_PERIOD_DAYS = 30;
@@ -126,11 +128,11 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
     schema: {
       body: {
         type: 'object',
-        required: ['plan', 'paymentMethod'],
+        required: ['plan', 'paymentMethod', 'paymentReference'],
         properties: {
           plan: { type: 'string', enum: PURCHASABLE_PLAN_IDS as string[] },
-          paymentMethod: { type: 'string', enum: Object.values(PaymentMethod) },
-          paymentReference: { type: ['string', 'null'], maxLength: 100 },
+          paymentMethod: { type: 'string', enum: [PaymentMethod.INSTAPAY] },
+          paymentReference: { type: 'string', pattern: '^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$', minLength: 3, maxLength: 100 },
         },
         additionalProperties: false,
       },
@@ -166,7 +168,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
           amount: new Prisma.Decimal(amount),
           currency: 'EGP',
           paymentMethod: request.body.paymentMethod,
-          paymentReference: request.body.paymentReference?.trim() || `PAY-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+          paymentReference: request.body.paymentReference.trim(),
           periodStart,
           periodEnd,
         },

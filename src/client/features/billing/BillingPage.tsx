@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Check, Sparkles, History, TriangleAlert, TrendingUp } from 'lucide-react';
+import { Check, Sparkles, History, TriangleAlert, TrendingUp, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { notify } from '../../components/ui/kit';
+import { InstapayQr } from '../../components/ui/InstapayQr';
 import { apiUrl } from '../../lib/config';
 import { money } from '../../lib/api';
 import { billingConfig } from '../../lib/billingConfig';
 import { PURCHASABLE_PLAN_IDS, PLANS, getPlanConfig } from '../../../shared/constants/plans';
 import type { VisitUsage } from '../../../shared/constants/plans';
+
+const INSTAPAY_ACCOUNT_REGEX = /^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$/;
 
 type SubscriptionItem = {
   id: string;
@@ -49,7 +52,6 @@ export function BillingPage() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<(typeof PURCHASABLE_PLAN_IDS)[number]>(PURCHASABLE_PLAN_IDS[0]);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'VODAFONE_CASH' | 'INSTAPAY' | 'CASH'>('VODAFONE_CASH');
   const [paymentReference, setPaymentReference] = useState('');
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -86,6 +88,11 @@ export function BillingPage() {
   }, []);
 
   const handleUpgradeSubmit = async () => {
+    const instapayRef = paymentReference.trim();
+    if (!INSTAPAY_ACCOUNT_REGEX.test(instapayRef)) {
+      notify('أدخل اسم حسابك في إنستاباي بالصيغة الصحيحة (مثل: name@instapay)', 'error');
+      return;
+    }
     setIsUpgrading(true);
     try {
       const res = await fetch(apiUrl('/api/subscriptions/upgrade'), {
@@ -94,8 +101,8 @@ export function BillingPage() {
         credentials: 'include',
         body: JSON.stringify({
           plan: selectedPlan,
-          paymentMethod: selectedPaymentMethod,
-          paymentReference: paymentReference.trim() || undefined,
+          paymentMethod: 'INSTAPAY',
+          paymentReference: instapayRef,
         }),
       });
       const json = await res.json();
@@ -114,7 +121,6 @@ export function BillingPage() {
 
   const openPaymentModal = (planId: (typeof PURCHASABLE_PLAN_IDS)[number]) => {
     setSelectedPlan(planId);
-    setSelectedPaymentMethod('VODAFONE_CASH');
     setShowPaymentModal(true);
   };
 
@@ -130,6 +136,8 @@ export function BillingPage() {
   const currentConfig = getPlanConfig(currentPlanKey);
   const selectedConfig = PLANS[selectedPlan];
   const usageBanner = usage && usage.limit !== null && usage.level !== 'ok' ? usage : null;
+  const instapayAccount = billingConfig.paymentAccounts.INSTAPAY;
+  const instapayLink = 'paymentLink' in instapayAccount && instapayAccount.paymentLink ? instapayAccount.paymentLink : null;
 
   return (
     <div className="page">
@@ -356,46 +364,38 @@ export function BillingPage() {
             </p>
 
             <div style={{ display: 'grid', gap: 14 }}>
-              <div>
-                <label className="field-label" style={{ display: 'block', marginBottom: 6 }}>طريقة الدفع (مصر):</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))', gap: 8 }}>
-                  {(Object.keys(billingConfig.paymentAccounts) as (keyof typeof billingConfig.paymentAccounts)[]).map((method) => (
-                    <button
-                      key={method}
-                      type="button"
-                      className={`btn ${selectedPaymentMethod === method ? 'btn--primary' : 'btn--ghost'}`}
-                      style={{ fontSize: 12, padding: 8 }}
-                      onClick={() => setSelectedPaymentMethod(method)}
-                    >
-                      {billingConfig.paymentAccounts[method].displayName}
-                    </button>
-                  ))}
+              <div style={{ background: '#f0faf5', border: '1px solid #c9e8db', borderRadius: 14, padding: 16, display: 'grid', gap: 12 }}>
+                <InstapayQr />
+                {instapayLink && (
+                  <a
+                    href={instapayLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn--primary"
+                    style={{ justifyContent: 'center', width: '100%', paddingBlock: 11 }}
+                  >
+                    ادفع الآن عبر رابط إنستاباي <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+                <div style={{ fontSize: 13, textAlign: 'center' }}>
+                  <span style={{ color: '#6b7280' }}>أو حوّل إلى الحساب:</span>{' '}
+                  <b dir="ltr" style={{ color: '#0e7c56' }}>{instapayAccount.accountNumber}</b>
                 </div>
               </div>
 
-              {selectedPaymentMethod !== 'CASH' && (
-                <div style={{ background: '#f5f7f6', padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  <p>
-                    يرجى تحويل {money(selectedConfig.priceEgp)} على {billingConfig.paymentAccounts[selectedPaymentMethod].displayName}:{' '}
-                    <b>{billingConfig.paymentAccounts[selectedPaymentMethod].accountNumber}</b>
-                  </p>
-                  <p style={{ color: '#6b7280', marginTop: 4 }}>ثم اكتب رقم التحويل أو المرجع بالأسفل لإتمام تفعيل الاشتراك:</p>
-                </div>
-              )}
-              {selectedPaymentMethod === 'CASH' && (
-                <div style={{ background: '#f5f7f6', padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  <p>تدفع الاشتراك نقداً، ثم تُفعَّل الباقة يدوياً بعد تأكيد الاستلام مع فريق مدار.</p>
-                </div>
-              )}
-
               <label className="field">
-                <span className="field-label">رقم المرجع / رقم التحويل (اختياري)</span>
+                <span className="field-label">اسم حسابك في إنستاباي (الذي دفعت منه) — إثبات الدفع *</span>
                 <input
                   className="input"
-                  placeholder="مثال: TRX-998822"
+                  dir="ltr"
+                  style={{ textAlign: 'start' }}
+                  placeholder="name@instapay"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
                 />
+                <small style={{ fontSize: 11, color: '#6b7280', marginTop: 4, display: 'block' }}>
+                  أدخل اسم حساب إنستاباي الذي دفعت منه بالضبط — مثل: name@instapay
+                </small>
               </label>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
