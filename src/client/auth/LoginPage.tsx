@@ -93,7 +93,7 @@ export function LoginPage({ onNavigateLanding, onNavigateSignup }: LoginPageProp
           )}
           {onNavigateSignup && (
             <button type="button" onClick={onNavigateSignup} className="btn-link" style={{ color: 'var(--primary)', fontWeight: 700 }}>
-              إنشاء سنتر جديد (تجربة مجانية)
+              إنشاء سنتر جديد وتفعيل الاشتراك
             </button>
           )}
         </div>

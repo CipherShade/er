@@ -1,8 +1,9 @@
 import argon2 from 'argon2';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { FastifyPluginAsync } from 'fastify';
-import { Role, TenantPlan } from '../../../shared/constants/index.js';
-import { PURCHASABLE_PLAN_IDS, TRIAL_DAYS, getPlanConfig } from '../../../shared/constants/plans.js';
+import { Prisma } from '@prisma/client';
+import { Role, SubscriptionStatus, TenantPlan } from '../../../shared/constants/index.js';
+import { PURCHASABLE_PLAN_IDS, getPlanConfig } from '../../../shared/constants/plans.js';
 import { prisma } from '../../lib/prisma.js';
 import { config } from '../../config/index.js';
 import { recordAuditEntry } from '../reports/audit.js';
@@ -41,6 +42,8 @@ const publicUserSelect = {
   preferredLanguage: true,
   phoneNumber: true,
 } as const;
+
+const SUBSCRIPTION_PERIOD_DAYS = 30;
 
 function setAuthCookie(reply: FastifyReply, token: string): void {
   reply.setCookie('access_token', token, {
@@ -131,7 +134,6 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       ? request.body.plan
       : TenantPlan.ESSENTIAL;
     const planConfig = getPlanConfig(plan);
-    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
     const slugSuffix = Math.random().toString(36).substring(2, 7);
     const slug = `center-${slugSuffix}`;
 
@@ -150,12 +152,27 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           ownerName: request.body.ownerName,
           ownerPhone: request.body.ownerPhone,
           plan: plan as TenantPlan,
-          trialEndsAt,
           isActive: true,
           maxDesks: planConfig.limits.maxDesks,
           maxBranches: planConfig.limits.maxBranches,
           maxUsers: planConfig.limits.maxUsers,
           visitLimit: planConfig.limits.visitLimit,
+        },
+      });
+
+      // Activate the SaaS subscription immediately on account creation.
+      const periodStart = new Date();
+      const periodEnd = new Date(Date.now() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+      await tx.subscription.create({
+        data: {
+          tenantId: tenant.id,
+          plan: plan as TenantPlan,
+          status: SubscriptionStatus.ACTIVE,
+          amount: new Prisma.Decimal(planConfig.priceEgp ?? 0),
+          currency: 'EGP',
+          paymentReference: `SUB-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          periodStart,
+          periodEnd,
         },
       });
 

@@ -90,7 +90,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
                 تسجيل الدخول
               </button>
               <button type="button" onClick={handleCta} className="lp-btn lp-btn-primary lp-btn-sm">
-                ابدأ تجربتك المجانية
+                اشترك الآن
               </button>
             </div>
 
@@ -129,7 +129,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
 
             <div className="lp-hero-actions">
               <button type="button" onClick={handleCta} className="lp-btn lp-btn-primary lp-btn-lg">
-                ابدأ تجربتك المجانية لمدة 14 يوم
+                اشترك الآن وابدأ فورًا
               </button>
               <a href="#how" className="lp-btn lp-btn-ghost lp-btn-lg">
                 شوف مدار بيشتغل إزاي
@@ -138,7 +138,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
 
             <p className="lp-hero-assure">
               <Check className="h-5 w-5 text-emerald-600" />
-              14 يوم مجانًا — بدون التزام وبدون بطاقة بنكية
+              يُفعَّل اشتراكك فور إنشاء الحساب — بدون بطاقة بنكية
             </p>
           </div>
 
@@ -499,7 +499,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
             <div className="lp-card">
               <span className="lp-step-n">01</span>
               <h3>أنشئ حساب السنتر</h3>
-              <p style={{ color: 'var(--lp-ink-2)', marginTop: 8 }}>سجل بيانات سنترك وابدأ تجربتك المجانية لمدة 14 يوم فورًا بدون تعقيدات.</p>
+              <p style={{ color: 'var(--lp-ink-2)', marginTop: 8 }}>سجل بيانات سنترك واختر باقتك، وسيُفعَّل اشتراكك فورًا بدون تعقيدات.</p>
             </div>
             <div className="lp-card">
               <span className="lp-step-n">02</span>
@@ -519,24 +519,23 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
       <section className="lp-section" id="pricing">
         <div className="lp-wrap">
           <div className="lp-sec-head lp-sec-head--center">
-            <h2>ابدأ مجانًا. وكبّر مدار مع سنترك.</h2>
-            <p>جرّب مدار لمدة 14 يوم مجانًا، وبعدها اختار الخطة المناسبة لاحتياجاتك بالجنيه المصري.</p>
+            <h2>اختر باقتك. وكبّر مدار مع سنترك.</h2>
+            <p>باقات واضحة بالجنيه المصري، وسيُفعَّل اشتراكك فور إنشاء حساب السنتر.</p>
           </div>
 
-          {/* 14-Day Free Trial Banner */}
+          {/* Subscription Activation Banner */}
           <div className="lp-trial">
             <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
               <div className="lp-trial-days">
-                <b>14</b>
-                <small>يوم</small>
+                <Check className="h-7 w-7" />
               </div>
               <div>
-                <h3 style={{ fontSize: 22 }}>14 يوم تجربة مجانية بالكامل</h3>
-                <p style={{ color: 'var(--lp-ink-2)' }}>جرّب جميع ميزات مدار العملية مع فريقك بدون أي دفع مسبق.</p>
+                <h3 style={{ fontSize: 22 }}>يُفعَّل اشتراكك فور إنشاء الحساب</h3>
+                <p style={{ color: 'var(--lp-ink-2)' }}>أنشئ حساب سنترك، اختر باقتك، وابدأ تشغيل الاستقبال في نفس اليوم — بدون بطاقة بنكية.</p>
               </div>
             </div>
             <button type="button" onClick={handleCta} className="lp-btn lp-btn-primary lp-btn-lg">
-              ابدأ تجربتك المجانية الآن
+              اشترك الآن
             </button>
           </div>
 
@@ -559,7 +558,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
                 <li>التقارير اليومية والمالية</li>
               </ul>
               <button type="button" onClick={handleCta} className="lp-btn lp-btn-ghost lp-btn-block lp-btn-lg">
-                ابدأ تجربتك المجانية
+                اشترك الآن
               </button>
             </article>
 
@@ -582,7 +581,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
                 <li style={{ color: '#fff' }}>دعم فني أولوية وتدريب الموظفين</li>
               </ul>
               <button type="button" onClick={handleCta} className="lp-btn lp-btn-light lp-btn-block lp-btn-lg">
-                ابدأ تجربتك المجانية
+                اشترك الآن
               </button>
             </article>
           </div>
@@ -684,8 +683,8 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
                 a: 'بيانات سنترك مشفرة بالكامل ومعزولة في قاعدة بيانات مستقلة، مع نسخ احتياطي يومي وسجل تدقيق يحفظ كل حركة داخل النظام.',
               },
               {
-                q: 'كيف أبدأ التجربة المجانية؟',
-                a: 'اضغط على "ابدأ تجربتك المجانية" واملأ بيانات سنترك وستحصل فوراً على 14 يوم تجربة مجانية كاملة الميزات بدون أي دفع.',
+                q: 'كيف أفعّل اشتراكي في مدار؟',
+                a: 'أنشئ حساب السنتر واختر باقتك من صفحة التسجيل، وسيُفعَّل اشتراكك فورًا فور إنشاء الحساب — بدون بطاقة بنكية.',
               },
             ].map((item, index) => (
               <div key={index} className="lp-faq-item">
@@ -718,17 +717,17 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
         <div className="lp-wrap" style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ color: '#fff', fontSize: 36 }}>جاهز تدير سنترك بطريقة أذكى؟</h2>
           <p style={{ maxWidth: 500, margin: '16px auto 32px', opacity: 0.9 }}>
-            ابدأ تجربتك المجانية لمدة 14 يوم واكتشف كيف يغير مدار كفاءة الاستقبال والحسابات.
+            اشترك الآن واكتشف كيف يغير مدار كفاءة الاستقبال والحسابات.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
             <button type="button" onClick={handleCta} className="lp-btn lp-btn-light lp-btn-lg">
-              ابدأ تجربتك المجانية
+              اشترك الآن
             </button>
             <button type="button" onClick={handleLogin} className="lp-btn lp-btn-outline-light lp-btn-lg">
               تسجيل الدخول إلى حسابك
             </button>
           </div>
-          <p style={{ marginTop: 24, fontSize: 13, opacity: 0.8 }}>14 يوم مجانًا — بدون التزام</p>
+          <p style={{ marginTop: 24, fontSize: 13, opacity: 0.8 }}>تفعيل فوري — بدون بطاقة بنكية</p>
         </div>
       </section>
 
@@ -758,7 +757,7 @@ export function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPagePr
               تسجيل الدخول
             </button>
             <button type="button" onClick={handleCta} style={{ textAlign: 'start', color: 'var(--lp-brand-600)', fontWeight: 700, background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
-              ابدأ تجربتك المجانية
+              اشترك الآن
             </button>
           </div>
         </div>

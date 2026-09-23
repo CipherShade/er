@@ -93,7 +93,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
             م
           </div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#e8f5ef', color: '#0e7c56', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
-            <Sparkles className="h-3.5 w-3.5" /> 14 يوم تجربة مجانية
+            <Sparkles className="h-3.5 w-3.5" /> يُفعَّل الاشتراك فورًا
           </span>
         </div>
 
@@ -132,7 +132,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
 
             <div style={{ marginTop: 8 }}>
               <span className="field-label" style={{ display: 'block', marginBottom: 8 }}>
-                اختر الباقة (جميع الباقات تشمل 14 يوم مجاناً)
+                اختر باقتك — سيُفعَّل اشتراكك فور إنشاء الحساب
               </span>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 10 }}>
@@ -246,7 +246,7 @@ export function SignupPage({ onNavigateLogin, onNavigateLanding }: SignupPagePro
                 style={{ flex: 2, paddingBlock: 12 }}
                 disabled={submitting}
               >
-                {submitting ? 'جاري إنشاء السنتر...' : 'إنشاء السنتر وبدء التجربة'}
+                {submitting ? 'جاري إنشاء السنتر...' : 'إنشاء السنتر وتفعيل الاشتراك'}
               </button>
             </div>
           </form>

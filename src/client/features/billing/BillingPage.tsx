@@ -310,7 +310,7 @@ export function BillingPage() {
         </h3>
 
         {subscriptions.length === 0 ? (
-          <p style={{ color: '#6b7280', fontSize: 13 }}>لا توجد مدفوعات سابقة حتى الآن (السنتر في فترة التجربة المجانية).</p>
+          <p style={{ color: '#6b7280', fontSize: 13 }}>لا توجد مدفوعات سابقة حتى الآن.</p>
         ) : (
           <div className="table-wrap">
             <table className="table">
