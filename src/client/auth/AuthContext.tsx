@@ -12,6 +12,7 @@ export type RegisterCenterParams = {
   username: string;
   password: string;
   plan?: 'ESSENTIAL' | 'CONTROL';
+  paymentReference: string;
 };
 
 type AuthContextValue = {

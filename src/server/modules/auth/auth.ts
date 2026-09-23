@@ -2,7 +2,7 @@ import argon2 from 'argon2';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { FastifyPluginAsync } from 'fastify';
 import { Prisma } from '@prisma/client';
-import { Role, SubscriptionStatus, TenantPlan } from '../../../shared/constants/index.js';
+import { PaymentMethod, Role, SubscriptionStatus, TenantPlan } from '../../../shared/constants/index.js';
 import { PURCHASABLE_PLAN_IDS, getPlanConfig } from '../../../shared/constants/plans.js';
 import { prisma } from '../../lib/prisma.js';
 import { config } from '../../config/index.js';
@@ -31,6 +31,8 @@ type RegisterCenterBody = {
   username: string;
   password: string;
   plan?: 'ESSENTIAL' | 'CONTROL';
+  /** The tenant's Instapay account name (e.g. name@instapay) used as proof of the subscription payment. */
+  paymentReference: string;
 };
 
 const publicUserSelect = {
@@ -109,7 +111,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     schema: {
       body: {
         type: 'object',
-        required: ['centerName', 'ownerName', 'ownerPhone', 'username', 'password'],
+        required: ['centerName', 'ownerName', 'ownerPhone', 'username', 'password', 'paymentReference'],
         properties: {
           centerName: { type: 'string', minLength: 2, maxLength: 100 },
           ownerName: { type: 'string', minLength: 2, maxLength: 100 },
@@ -117,6 +119,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           username: { type: 'string', minLength: 3, maxLength: 50, pattern: '^[a-zA-Z0-9_-]+$' },
           password: { type: 'string', minLength: 8, maxLength: 200 },
           plan: { type: 'string', enum: PURCHASABLE_PLAN_IDS as string[] },
+          paymentReference: { type: 'string', pattern: '^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$', minLength: 3, maxLength: 100 },
         },
         additionalProperties: false,
       },
@@ -126,7 +129,11 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     if (existingUser) {
       return reply.code(409).send({
         success: false,
-        error: { code: 'USERNAME_TAKEN', message: 'اسم المستخدم مسجل مسبقاً، يرجى اختيار اسم مستخدم آخر.', messageEn: 'Username is already taken.' },
+        error: {
+          code: 'USERNAME_TAKEN',
+          message: 'اسم الدخول هذا مستخدم بالفعل في حساب آخر — اختر اسمًا آخر لتسجيل الدخول.',
+          messageEn: 'This login username is already taken. Pick another one.',
+        },
       });
     }
 
@@ -160,7 +167,8 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         },
       });
 
-      // Activate the SaaS subscription immediately on account creation.
+      // The subscription is activated on the INSTAPAY payment the owner just
+      // submitted: their Instapay account name is stored as the payment proof.
       const periodStart = new Date();
       const periodEnd = new Date(Date.now() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
       await tx.subscription.create({
@@ -170,7 +178,8 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           status: SubscriptionStatus.ACTIVE,
           amount: new Prisma.Decimal(planConfig.priceEgp ?? 0),
           currency: 'EGP',
-          paymentReference: `SUB-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          paymentMethod: PaymentMethod.INSTAPAY,
+          paymentReference: request.body.paymentReference.trim(),
           periodStart,
           periodEnd,
         },
