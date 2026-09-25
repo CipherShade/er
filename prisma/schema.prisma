@@ -37,6 +37,12 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
+enum SubscriptionAdjustmentType {
+  DISCOUNT
+  CREDIT
+  REFUND
+}
+
 enum SessionStatus {
   SCHEDULED
   ACTIVE
@@ -78,6 +84,7 @@ model Tenant {
   id          String     @id @default(uuid())
   name        String
   slug        String     @unique
+  searchName  String?    @map("search_name")
   ownerName   String?    @map("owner_name")
   ownerPhone  String?    @map("owner_phone")
   plan        TenantPlan @default(FREE_TRIAL)
@@ -87,6 +94,8 @@ model Tenant {
   maxBranches Int        @default(1) @map("max_branches")
   maxUsers    Int        @default(3) @map("max_users")
   visitLimit  Int?       @map("visit_limit")
+  discountBalance Decimal @default(0) @map("discount_balance")
+  creditBalance   Decimal @default(0) @map("credit_balance")
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
 
@@ -107,6 +116,7 @@ model Tenant {
   UsageOverride          UsageOverride[]
   SuperAdminSession      SuperAdminSession[]
   SystemHealthEvent      SystemHealthEvent[]
+  SubscriptionAdjustment SubscriptionAdjustment[]
 
   @@map("tenants")
 }
@@ -128,6 +138,8 @@ model Subscription {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  adjustments SubscriptionAdjustment[]
+
   @@index([tenantId])
   @@map("subscriptions")
 }
@@ -140,10 +152,12 @@ model User {
   email             String?  @unique
   passwordHash      String   @map("password_hash")
   fullName          String   @map("full_name")
+  searchName        String?  @map("search_name")
   role              Role     @default(RECEPTIONIST)
   phoneNumber       String?  @map("phone_number")
   preferredLanguage String   @default("ar") @map("preferred_language")
   isActive          Boolean  @default(true) @map("is_active")
+  lastLoginAt       DateTime? @map("last_login_at")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -162,6 +176,7 @@ model User {
   usageOverridesGranted     UsageOverride[]
   superAdminSessions        SuperAdminSession[]
   superAdminUserPermissions SuperAdminUserPermission[]
+  subscriptionAdjustments    SubscriptionAdjustment[]
 
   @@index([tenantId])
   @@map("users")
@@ -544,6 +559,26 @@ model UsageOverride {
   @@index([tenantId])
   @@index([metric])
   @@map("usage_overrides")
+}
+
+model SubscriptionAdjustment {
+  id             String                   @id @default(uuid())
+  tenantId       String                   @map("tenant_id")
+  subscriptionId String?                  @map("subscription_id")
+  type           SubscriptionAdjustmentType
+  amount         Decimal
+  reason         String?
+  createdById    String                   @map("created_by_id")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@index([type])
+  @@map("subscription_adjustments")
 }
 
 model SuperAdminSession {

@@ -8,6 +8,7 @@ import {
 } from '../../../shared/constants/plans.js';
 import { prisma } from '../../lib/prisma.js';
 import { isValidUUID } from '../../lib/http.js';
+import { applyBillingBalances } from '../admin/billingMath.js';
 import { authenticate, requireRoles } from '../auth/auth.js';
 import { recordAuditEntry } from '../reports/audit.js';
 
@@ -156,11 +157,19 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const planConfig = getPlanConfig(selectedPlan);
-    const amount = planConfig.priceEgp ?? 0;
+    const baseAmount = planConfig.priceEgp ?? 0;
     const periodStart = new Date();
     const periodEnd = new Date(Date.now() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
     const result = await prisma.$transaction(async (tx) => {
+      // Owner-granted discount/credit wallets are spent on this invoice. The
+      // math itself lives in the domain layer (admin/billingMath.ts).
+      const tenantForWallet = await tx.tenant.findUniqueOrThrow({
+        where: { id: tenantId },
+        select: { discountBalance: true, creditBalance: true },
+      });
+      const billing = applyBillingBalances(baseAmount, tenantForWallet.discountBalance, tenantForWallet.creditBalance);
+
       // Upgrade payments are created PENDING and activated by a SUPER_ADMIN
       // once the INSTAPAY transfer is verified against the reference.
       const subscription = await tx.subscription.create({
@@ -168,7 +177,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
           tenantId,
           plan: selectedPlan as TenantPlan,
           status: SubscriptionStatus.PENDING,
-          amount: new Prisma.Decimal(amount),
+          amount: new Prisma.Decimal(billing.amountDue),
           currency: 'EGP',
           paymentMethod: request.body.paymentMethod,
           paymentReference: request.body.paymentReference.trim(),
@@ -185,6 +194,8 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
           maxBranches: planConfig.limits.maxBranches,
           maxUsers: planConfig.limits.maxUsers,
           visitLimit: planConfig.limits.visitLimit,
+          discountBalance: new Prisma.Decimal(billing.remainingDiscount),
+          creditBalance: new Prisma.Decimal(billing.remainingCredit),
         },
       });
 
@@ -194,11 +205,17 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         action: 'SUBSCRIPTION_UPGRADED',
         entityType: 'SUBSCRIPTION',
         entityId: subscription.id,
-        amount,
-        metadata: { plan: selectedPlan, paymentMethod: request.body.paymentMethod },
+        amount: billing.amountDue,
+        metadata: {
+          plan: selectedPlan,
+          paymentMethod: request.body.paymentMethod,
+          baseAmount: billing.baseAmount,
+          discountApplied: billing.discountApplied,
+          creditApplied: billing.creditApplied,
+        },
       }, tx);
 
-      return { subscription, tenant: updatedTenant };
+      return { subscription, tenant: updatedTenant, billing };
     });
 
     return reply.send({
@@ -209,6 +226,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (app) => {
           amount: result.subscription.amount.toString(),
         },
         tenant: result.tenant,
+        billing: result.billing,
       },
     });
   });

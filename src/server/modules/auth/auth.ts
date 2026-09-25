@@ -102,6 +102,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
     const token = await app.jwt.sign({ sub: user.id, username: user.username, role: user.role as Role, tenantId: user.tenantId }, { expiresIn: config.jwtExpiresIn });
     setAuthCookie(reply, token);
+    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     const { passwordHash: _passwordHash, isActive: _isActive, ...safeUser } = user;
     return reply.send({ success: true, data: { user: safeUser } });
   });

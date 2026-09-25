@@ -1,77 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, TrendingUp, AlertTriangle, CheckCircle2, Clock, RefreshCw, Search, ShieldOff, ShieldCheck, CalendarPlus, ChevronDown, ChevronUp, Wallet, BadgeCheck, Ban } from 'lucide-react';
-import { Metric, Pill, notify } from '../../components/ui/kit';
-import { api, money } from '../../lib/api';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Eye, LogOut, RefreshCw } from 'lucide-react';
+import { notify } from '../../components/ui/kit';
+import { api } from '../../lib/api';
+import { OverviewSection } from './sections/OverviewSection';
+import { CentersSection } from './sections/CentersSection';
+import { UsersSection } from './sections/UsersSection';
+import { SubscriptionsSection } from './sections/SubscriptionsSection';
+import { PlansSection } from './sections/PlansSection';
+import { UsageSection } from './sections/UsageSection';
+import { RevenueSection } from './sections/RevenueSection';
+import { NotificationsSection } from './sections/NotificationsSection';
+import { FeatureFlagsSection } from './sections/FeatureFlagsSection';
+import { HealthSection } from './sections/HealthSection';
+import { AuditSection } from './sections/AuditSection';
+import { SettingsSection } from './sections/SettingsSection';
+import { DataSection } from './sections/DataSection';
+import { SecuritySection } from './sections/SecuritySection';
+import { SupportSection } from './sections/SupportSection';
+import { AccountSection } from './sections/AccountSection';
+import { DEFAULT_SECTION, SECTIONS, SECTION_GROUPS, type SectionId } from './sections/registry';
+import type { CenterPreview, TenantRow, ViewAsSession } from './sections/types';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type PlatformStats = {
-  totalTenants: number;
-  activeTenants: number;
-  trialTenants: number;
-  suspendedTenants: number;
-  mrrEgp: number;
-};
-
-type TenantRow = {
-  id: string;
-  name: string;
-  slug: string;
-  plan: string;
-  isActive: boolean;
-  trialEndsAt: string | null;
-  trialDaysRemaining: number;
-  isTrialActive: boolean;
-  maxDesks: number;
-  maxBranches: number;
-  createdAt: string;
-  userCount: number;
-  studentCount: number;
-  sessionCount: number;
-};
-
-type AuditLogEntry = {
-  id: string;
-  action: string;
-  entityType: string;
-  entityId: string | null;
-  amount: string | null;
-  createdAt: string;
-  actor?: { username: string; fullName: string; role: string; tenant?: { id: string; name: string } | null } | null;
-};
-
-type PendingPayment = {
-  id: string;
-  plan: string;
-  amount: string;
-  currency: string;
-  paymentMethod: string | null;
-  paymentReference: string | null;
-  createdAt: string;
-  tenant: { id: string; name: string; slug: string; plan: string };
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const PLAN_LABELS: Record<string, { ar: string; tone: 'primary' | 'accent' | 'success' | 'muted' | 'warning' | 'danger' }> = {
-  FREE_TRIAL: { ar: 'تجريبي', tone: 'warning' },
-  ESSENTIAL: { ar: 'الأساس', tone: 'primary' },
-  CONTROL: { ar: 'السيطرة', tone: 'accent' },
-  MULTI_BRANCH: { ar: 'متعدد الفروع (داخلي)', tone: 'success' },
-  GROWTH: { ar: 'الأساس (سابق)', tone: 'primary' },
-  BUSINESS: { ar: 'السيطرة (سابق)', tone: 'accent' },
-  ENTERPRISE: { ar: 'متعدد الفروع (سابق)', tone: 'success' },
-};
-
-function planLabel(plan: string) {
-  return PLAN_LABELS[plan] ?? { ar: plan, tone: 'muted' as const };
-}
-
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(iso));
-}
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
+const SECTION_KEY = 'madar.superadmin.section';
 
 function ExtendTrialModal({
   tenant,
@@ -82,6 +33,7 @@ function ExtendTrialModal({
   onConfirm: (days: number) => Promise<void>;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(false);
 
@@ -96,20 +48,18 @@ function ExtendTrialModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="تمديد الفترة التجريبية">
-      <div className="modal-box" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-        <h3 className="page-title" style={{ fontSize: 17, marginBottom: 12 }}>
-          تمديد الفترة التجريبية
-        </h3>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={t('superAdmin.centers.extendTrial')}>
+      <div className="modal-box" style={{ maxWidth: 420 }} onClick={(event) => event.stopPropagation()}>
+        <h3 className="page-title" style={{ fontSize: 17, marginBottom: 12 }}>{t('superAdmin.centers.extendTrial')}</h3>
         <p className="page-sub" style={{ marginBottom: 20 }}>
           {tenant.name}
           {tenant.isTrialActive && (
             <span style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
-              متبقٍ: <strong>{tenant.trialDaysRemaining}</strong> يوم
+              {t('superAdmin.centers.trialDaysRemaining', { days: tenant.trialDaysRemaining })}
             </span>
           )}
         </p>
-        <label className="form-label" htmlFor="sa-extend-days">عدد الأيام الإضافية</label>
+        <label className="form-label" htmlFor="sa-extend-days">{t('superAdmin.centers.extendDaysLabel')}</label>
         <input
           id="sa-extend-days"
           type="number"
@@ -117,13 +67,13 @@ function ExtendTrialModal({
           min={1}
           max={365}
           value={days}
-          onChange={(e) => setDays(Math.max(1, Math.min(365, Number(e.target.value))))}
+          onChange={(event) => setDays(Math.max(1, Math.min(365, Number(event.target.value))))}
           style={{ marginBottom: 20 }}
         />
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn--ghost" onClick={onClose} disabled={loading}>إلغاء</button>
+          <button className="btn btn--ghost" onClick={onClose} disabled={loading}>{t('actions.cancel')}</button>
           <button className="btn btn--primary" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'جاري...' : `تمديد ${days} يوم`}
+            {loading ? t('superAdmin.common.busy') : t('superAdmin.centers.extendConfirm', { days })}
           </button>
         </div>
       </div>
@@ -131,107 +81,107 @@ function ExtendTrialModal({
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+function ViewAsModal({
+  tenant,
+  onConfirm,
+  onClose,
+}: {
+  tenant: TenantRow;
+  onConfirm: (reason: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function SuperAdminPage() {
-  const [stats, setStats] = useState<PlatformStats | null>(null);
-  const [tenants, setTenants] = useState<TenantRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tenants' | 'audit' | 'payments'>('tenants');
-  const [payments, setPayments] = useState<PendingPayment[]>([]);
-  const [paymentsLoading, setPaymentsLoading] = useState(false);
-  const [actionId, setActionId] = useState<string | null>(null);
-  const [extendTarget, setExtendTarget] = useState<TenantRow | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const LIMIT = 20;
-  const pages = Math.ceil(total / LIMIT);
-
-  // ── Data fetching ──────────────────────────────────────────────────────
-  const fetchStats = useCallback(async () => {
-    try {
-      const data = await api<PlatformStats>('/admin/stats');
-      setStats(data);
-    } catch {
-      notify('فشل تحميل إحصائيات المنصة', 'error');
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      setError(t('superAdmin.viewAs.reasonRequired'));
+      return;
     }
-  }, []);
-
-  const fetchTenants = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
-      if (search) params.set('search', search);
-      const data = await api<{ tenants: TenantRow[]; pagination: { total: number } }>(`/admin/tenants?${params}`);
-      setTenants(data.tenants);
-      setTotal(data.pagination.total);
+      await onConfirm(reason.trim());
+      onClose();
     } catch {
-      notify('فشل تحميل قائمة المراكز', 'error');
+      setError(t('superAdmin.viewAs.startError'));
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
-
-  const fetchAuditLogs = useCallback(async () => {
-    setAuditLoading(true);
-    try {
-      const data = await api<{ logs: AuditLogEntry[] }>('/admin/audit-logs?limit=100');
-      setAuditLogs(data.logs);
-    } catch {
-      notify('فشل تحميل سجل التدقيق', 'error');
-    } finally {
-      setAuditLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchStats();
-  }, [fetchStats]);
-
-  useEffect(() => {
-    void fetchTenants();
-  }, [fetchTenants]);
-
-  useEffect(() => {
-    if (activeTab === 'audit' && auditLogs.length === 0) void fetchAuditLogs();
-  }, [activeTab, auditLogs.length, fetchAuditLogs]);
-
-  const fetchPendingPayments = useCallback(async () => {
-    setPaymentsLoading(true);
-    try {
-      const data = await api<{ subscriptions: PendingPayment[] }>('/subscriptions/pending');
-      setPayments(data.subscriptions);
-    } catch {
-      notify('فشل تحميل المدفوعات المعلقة', 'error');
-    } finally {
-      setPaymentsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'payments') void fetchPendingPayments();
-  }, [activeTab, fetchPendingPayments]);
-
-  // ── Actions ────────────────────────────────────────────────────────────
-  const handleSuspend = async (tenant: TenantRow) => {
-    const newState = !tenant.isActive;
-    try {
-      await api<unknown>(`/admin/tenants/${tenant.id}/suspend`, {
-        method: 'PATCH',
-        body: JSON.stringify({ isActive: newState }),
-      });
-      notify(newState ? `تم تفعيل "${tenant.name}"` : `تم تعليق "${tenant.name}"`, 'success');
-      void fetchTenants();
-      void fetchStats();
-    } catch {
-      notify('فشل تحديث حالة المركز', 'error');
-    }
   };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={t('superAdmin.viewAs.modalTitle')}>
+      <div className="modal-box" style={{ maxWidth: 460 }} onClick={(event) => event.stopPropagation()}>
+        <h3 className="page-title" style={{ fontSize: 17, marginBottom: 8 }}>{t('superAdmin.viewAs.modalTitle')}</h3>
+        <p className="page-sub" style={{ marginBottom: 6 }}><strong>{tenant.name}</strong></p>
+        <p className="page-sub" style={{ marginBottom: 20, fontSize: 13 }}>{t('superAdmin.viewAs.modalSubtitle')}</p>
+        <label className="form-label" htmlFor="sa-viewas-reason">{t('superAdmin.viewAs.reasonLabel')}</label>
+        <input
+          id="sa-viewas-reason"
+          type="text"
+          className="form-input"
+          placeholder={t('superAdmin.viewAs.reasonPlaceholder')}
+          value={reason}
+          onChange={(event) => { setReason(event.target.value); setError(null); }}
+          style={{ marginBottom: error ? 6 : 20 }}
+        />
+        {error && (
+          <p role="alert" style={{ color: 'var(--color-danger, #b91c1c)', fontSize: 13, marginBottom: 16 }}>{error}</p>
+        )}
+        <p className="page-sub" style={{ marginBottom: 16, fontSize: 12 }}>{t('superAdmin.viewAs.previewHint')}</p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button className="btn btn--ghost" onClick={onClose} disabled={loading}>{t('actions.cancel')}</button>
+          <button className="btn btn--primary" onClick={handleSubmit} disabled={loading} style={{ gap: 6 }}>
+            <Eye className="h-3 w-3" />
+            {loading ? t('superAdmin.viewAs.starting') : t('superAdmin.viewAs.start')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SuperAdminPage() {
+  const { t } = useTranslation();
+  const [activeSection, setActiveSection] = useState<SectionId>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SECTION;
+    const stored = window.sessionStorage.getItem(SECTION_KEY);
+    return SECTIONS.some((section) => section.id === stored) ? (stored as SectionId) : DEFAULT_SECTION;
+  });
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [extendTarget, setExtendTarget] = useState<TenantRow | null>(null);
+  const [viewAsTarget, setViewAsTarget] = useState<TenantRow | null>(null);
+  const [viewAs, setViewAs] = useState<ViewAsSession | null>(null);
+  const [viewAsBusy, setViewAsBusy] = useState(false);
+  const [preview, setPreview] = useState<CenterPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const select = useCallback((section: SectionId) => {
+    setActiveSection(section);
+    try {
+      window.sessionStorage.setItem(SECTION_KEY, section);
+    } catch {
+      /* storage is optional */
+    }
+  }, []);
+
+  const handleRefresh = useCallback(() => setRefreshToken((value) => value + 1), []);
+
+  useEffect(() => {
+    if (!viewAs) return;
+    const tick = () => {
+      if (new Date(viewAs.expiresAt).getTime() <= Date.now()) {
+        setViewAs(null);
+        setPreview(null);
+        notify(t('superAdmin.viewAs.expired'), 'error');
+      }
+    };
+    const timer = window.setInterval(tick, 5000);
+    return () => window.clearInterval(timer);
+  }, [viewAs, t]);
 
   const handleExtendTrial = async (tenant: TenantRow, days: number) => {
     try {
@@ -239,438 +189,235 @@ export function SuperAdminPage() {
         method: 'PATCH',
         body: JSON.stringify({ days }),
       });
-      notify(`تم تمديد الفترة التجريبية لـ "${tenant.name}" بمقدار ${days} أيام`, 'success');
-      void fetchTenants();
+      notify(t('superAdmin.centers.extended', { name: tenant.name, days }), 'success');
+      handleRefresh();
     } catch {
-      notify('فشل تمديد الفترة التجريبية', 'error');
+      notify(t('superAdmin.centers.extendError'), 'error');
     }
   };
 
-  const handleVerifyPayment = async (payment: PendingPayment) => {
-    setActionId(payment.id);
+  const handleStartViewAs = async (tenant: TenantRow, reason: string) => {
+    const data = await api<{ sessionId: string; token: string; expiresAt: string; tenant: { id: string; name: string } }>(
+      `/admin/tenants/${tenant.id}/view-as`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    );
+    setViewAs({ sessionId: data.sessionId, token: data.token, expiresAt: data.expiresAt, tenantName: data.tenant.name });
+    select('centers');
+  };
+
+  const handleEndViewAs = async () => {
+    if (!viewAs) return;
+    setViewAsBusy(true);
     try {
-      await api<unknown>(`/subscriptions/${payment.id}/verify`, { method: 'POST' });
-      notify(`تم تأكيد دفعة "${payment.tenant.name}" ✓`, 'success');
-      void fetchPendingPayments();
+      await api<{ sessionId: string }>('/admin/view-as/return', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: viewAs.sessionId }),
+      });
+      setViewAs(null);
+      setPreview(null);
+      notify(t('superAdmin.viewAs.return'), 'success');
     } catch {
-      notify('فشل تأكيد الدفعة', 'error');
+      notify(t('superAdmin.viewAs.returnError'), 'error');
     } finally {
-      setActionId(null);
+      setViewAsBusy(false);
     }
   };
 
-  const handleRejectPayment = async (payment: PendingPayment) => {
-    setActionId(payment.id);
+  const loadCenterPreview = async () => {
+    if (!viewAs) return;
+    setPreviewLoading(true);
     try {
-      await api<unknown>(`/subscriptions/${payment.id}/reject`, { method: 'POST' });
-      notify(`تم رفض دفعة "${payment.tenant.name}"`, 'success');
-      void fetchPendingPayments();
+      const data = await api<{ students: CenterPreview['students']; pagination?: { total?: number } }>('/students?limit=5&page=1', {
+        headers: { Authorization: `Bearer ${viewAs.token}` },
+      });
+      setPreview({
+        students: data.students ?? [],
+        total: data.pagination?.total ?? data.students?.length ?? 0,
+      });
     } catch {
-      notify('فشل رفض الدفعة', 'error');
+      notify(t('superAdmin.viewAs.previewLoadError'), 'error');
     } finally {
-      setActionId(null);
+      setPreviewLoading(false);
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  const viewAsMinutes = viewAs ? Math.max(0, Math.ceil((new Date(viewAs.expiresAt).getTime() - Date.now()) / 60000)) : 0;
+
+  const sectionProps = { key: `${activeSection}-${refreshToken}` };
+
   return (
     <div className="page-container">
-      {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">لوحة إدارة المنصة</h1>
-          <p className="page-sub">مراقبة وإدارة جميع المراكز التعليمية المسجلة</p>
+          <h1 className="page-title">{t('superAdmin.shell.title')}</h1>
+          <p className="page-sub">{t('superAdmin.shell.subtitle')}</p>
         </div>
         <button
           className="btn btn--ghost"
-          onClick={() => { void fetchStats(); void fetchTenants(); }}
-          aria-label="تحديث البيانات"
-          title="تحديث"
+          onClick={handleRefresh}
+          aria-label={t('common.refresh')}
+          title={t('common.refresh')}
         >
           <RefreshCw className="h-4 w-4" />
         </button>
       </div>
 
-      {/* KPI Cards */}
-      {stats && (
-        <div className="metrics-grid" style={{ marginBottom: 28 }}>
-          <Metric
-            label="إجمالي المراكز"
-            value={stats.totalTenants.toLocaleString('ar-EG')}
-            icon={Building2}
-          />
-          <Metric
-            label="مراكز نشطة"
-            value={stats.activeTenants.toLocaleString('ar-EG')}
-            icon={CheckCircle2}
-          />
-          <Metric
-            label="في فترة تجريبية"
-            value={stats.trialTenants.toLocaleString('ar-EG')}
-            icon={Clock}
-          />
-          <Metric
-            label="موقوفة"
-            value={stats.suspendedTenants.toLocaleString('ar-EG')}
-            icon={AlertTriangle}
-          />
-          <Metric
-            label="الإيرادات الشهرية (MRR)"
-            value={money(stats.mrrEgp)}
-            icon={TrendingUp}
-          />
+      {viewAs && (
+        <div
+          role="status"
+          style={{
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: 12,
+            padding: '12px 16px',
+            marginBottom: 20,
+            color: '#1e3a8a',
+            display: 'flex',
+            gap: 12,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <Eye className="h-4 w-4" aria-hidden="true" />
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <strong>{t('superAdmin.viewAs.activeTitle', { name: viewAs.tenantName })}</strong>
+            <span style={{ display: 'block', fontSize: 12, marginTop: 2 }}>
+              {t('superAdmin.viewAs.expiresIn', { minutes: viewAsMinutes })} — {t('superAdmin.viewAs.previewHint')}
+            </span>
+          </div>
+          <button
+            className="btn btn--ghost"
+            style={{ fontSize: 12, padding: '4px 12px', gap: 4 }}
+            onClick={() => void loadCenterPreview()}
+            disabled={previewLoading}
+            aria-label={t('superAdmin.viewAs.previewLoad')}
+          >
+            {previewLoading ? <RefreshCw className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+            {t('superAdmin.viewAs.previewLoad')}
+          </button>
+          <button
+            className="btn btn--danger"
+            style={{ fontSize: 12, padding: '4px 12px', gap: 4 }}
+            onClick={() => void handleEndViewAs()}
+            disabled={viewAsBusy}
+            aria-label={t('superAdmin.viewAs.return')}
+          >
+            <LogOut className="h-3 w-3" />
+            {viewAsBusy ? t('superAdmin.viewAs.returning') : t('superAdmin.viewAs.return')}
+          </button>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="tab-bar" style={{ marginBottom: 20 }}>
-        <button
-          className={`tab-btn${activeTab === 'tenants' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('tenants')}
-          id="tab-tenants"
-          aria-selected={activeTab === 'tenants'}
-        >
-          <Building2 className="h-4 w-4" />
-          المراكز ({total})
-        </button>
-        <button
-          className={`tab-btn${activeTab === 'audit' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('audit')}
-          id="tab-audit"
-          aria-selected={activeTab === 'audit'}
-        >
-          <Users className="h-4 w-4" />
-          سجل التدقيق
-        </button>
-        <button
-          className={`tab-btn${activeTab === 'payments' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('payments')}
-          id="tab-payments"
-          aria-selected={activeTab === 'payments'}
-        >
-          <Wallet className="h-4 w-4" />
-          المدفوعات المعلقة ({payments.length})
-        </button>
-      </div>
-
-      {/* ── Tenants Tab ─────────────────────────────────────────────────── */}
-      {activeTab === 'tenants' && (
-        <>
-          {/* Search */}
-          <div className="search-bar" style={{ marginBottom: 16 }}>
-            <Search className="search-icon h-4 w-4" aria-hidden="true" />
-            <input
-              id="sa-search"
-              type="search"
-              className="search-input"
-              placeholder="ابحث باسم المركز أو الـ slug..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              aria-label="بحث عن مركز"
-            />
+      {viewAs && preview && (
+        <div className="table-wrapper" role="region" aria-label={t('superAdmin.viewAs.previewTitle')} style={{ marginBottom: 20 }}>
+          <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color, rgba(0,0,0,0.08))' }}>
+            <strong>{t('superAdmin.viewAs.previewTitle')}</strong>
+            <span className="page-sub" style={{ display: 'block', fontSize: 12 }}>
+              {t('superAdmin.viewAs.previewSubtitle')} · {t('superAdmin.viewAs.studentsCount')}:{' '}
+              {preview.total.toLocaleString('ar-EG')}
+            </span>
           </div>
-
-          {/* Table */}
-          <div className="table-wrapper" role="region" aria-label="قائمة المراكز">
-            <table className="data-table" aria-label="المراكز التعليمية">
-              <thead>
-                <tr>
-                  <th scope="col">المركز</th>
-                  <th scope="col">الخطة</th>
-                  <th scope="col">الحالة</th>
-                  <th scope="col">المستخدمون</th>
-                  <th scope="col">الطلاب</th>
-                  <th scope="col">تاريخ التسجيل</th>
-                  <th scope="col">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 32 }}>
-                      <span className="page-sub">جاري التحميل...</span>
-                    </td>
-                  </tr>
-                ) : tenants.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 32 }}>
-                      <span className="page-sub">لا توجد مراكز مسجلة</span>
-                    </td>
-                  </tr>
-                ) : (
-                  tenants.map((tenant) => {
-                    const isExpanded = expandedId === tenant.id;
-                    const pl = planLabel(tenant.plan);
-                    return (
-                      <>
-                        <tr key={tenant.id} style={{ opacity: tenant.isActive ? 1 : 0.55 }}>
-                          <td>
-                            <button
-                              className="btn btn--ghost"
-                              style={{ padding: '2px 6px', gap: 4 }}
-                              onClick={() => setExpandedId(isExpanded ? null : tenant.id)}
-                              aria-expanded={isExpanded}
-                              aria-label={isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
-                            >
-                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                            </button>
-                            <strong>{tenant.name}</strong>
-                            <br />
-                            <span className="page-sub" style={{ fontSize: 12 }}>{tenant.slug}</span>
-                          </td>
-                          <td>
-                            <Pill tone={pl.tone}>{pl.ar}</Pill>
-                            {tenant.isTrialActive && (
-                              <span style={{ display: 'block', fontSize: 11, marginTop: 4, color: 'var(--color-warning, #d97706)' }}>
-                                {tenant.trialDaysRemaining} يوم متبقٍ
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            <Pill tone={tenant.isActive ? 'success' : 'danger'}>
-                              {tenant.isActive ? 'نشط' : 'موقوف'}
-                            </Pill>
-                          </td>
-                          <td>{tenant.userCount.toLocaleString('ar-EG')}</td>
-                          <td>{tenant.studentCount.toLocaleString('ar-EG')}</td>
-                          <td style={{ fontSize: 13 }}>{formatDate(tenant.createdAt)}</td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              <button
-                                className="btn btn--ghost"
-                                style={{ fontSize: 12, padding: '4px 10px' }}
-                                onClick={() => setExtendTarget(tenant)}
-                                title="تمديد الفترة التجريبية"
-                                aria-label={`تمديد تجربة ${tenant.name}`}
-                              >
-                                <CalendarPlus className="h-3 w-3" />
-                                تمديد
-                              </button>
-                              <button
-                                className={`btn ${tenant.isActive ? 'btn--danger' : 'btn--primary'}`}
-                                style={{ fontSize: 12, padding: '4px 10px' }}
-                                onClick={() => handleSuspend(tenant)}
-                                title={tenant.isActive ? 'تعليق المركز' : 'إعادة تفعيل المركز'}
-                                aria-label={tenant.isActive ? `تعليق ${tenant.name}` : `تفعيل ${tenant.name}`}
-                              >
-                                {tenant.isActive
-                                  ? <><ShieldOff className="h-3 w-3" /> تعليق</>
-                                  : <><ShieldCheck className="h-3 w-3" /> تفعيل</>
-                                }
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        {isExpanded && (
-                          <tr key={`${tenant.id}-detail`} className="expanded-row">
-                            <td colSpan={7} style={{ padding: '8px 24px 16px', background: 'var(--bg-surface-alt, rgba(0,0,0,0.04))' }}>
-                              <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', fontSize: 13 }}>
-                                <span><strong>الحصص:</strong> {tenant.sessionCount.toLocaleString('ar-EG')}</span>
-                                <span><strong>الحد الأقصى للمكاتب:</strong> {tenant.maxDesks}</span>
-                                <span><strong>الحد الأقصى للفروع:</strong> {tenant.maxBranches}</span>
-                                {tenant.trialEndsAt && (
-                                  <span><strong>نهاية التجربة:</strong> {formatDate(tenant.trialEndsAt)}</span>
-                                )}
-                                <span><strong>Slug:</strong> <code>{tenant.slug}</code></span>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {pages > 1 && (
-            <div className="pagination" style={{ marginTop: 16 }}>
-              <button
-                className="btn btn--ghost"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                aria-label="الصفحة السابقة"
-              >
-                السابق
-              </button>
-              <span className="page-sub" style={{ padding: '0 12px' }}>
-                {page} / {pages}
-              </span>
-              <button
-                className="btn btn--ghost"
-                disabled={page >= pages}
-                onClick={() => setPage((p) => p + 1)}
-                aria-label="الصفحة التالية"
-              >
-                التالي
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ── Pending Payments Tab ─────────────────────────────────────────── */}
-      {activeTab === 'payments' && (
-        <div>
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#78350f', display: 'flex', gap: 8, alignItems: 'center' }}>
-            <AlertTriangle className="h-4 w-4" />
-            قارن المرجع الظاهر بالأسفل مع التحويلات الواردة في تطبيق إنستاباي قبل تأكيد الدفعة.
-          </div>
-
-          <div className="table-wrapper" role="region" aria-label="المدفوعات المعلقة">
-            {paymentsLoading ? (
-              <div style={{ padding: 32, textAlign: 'center' }}>
-                <span className="page-sub">جاري تحميل المدفوعات...</span>
-              </div>
-            ) : (
-              <table className="data-table" aria-label="المدفوعات قيد التأكيد">
-                <thead>
-                  <tr>
-                    <th scope="col">المركز</th>
-                    <th scope="col">الباقة</th>
-                    <th scope="col">المبلغ</th>
-                    <th scope="col">مرجع إنستاباي</th>
-                    <th scope="col">التاريخ</th>
-                    <th scope="col">إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: 32 }}>
-                        <span className="page-sub">لا توجد مدفوعات معلقة — كل الاشتراكات مؤكدة ✓</span>
-                      </td>
-                    </tr>
-                  ) : (
-                    payments.map((payment) => {
-                      const pl = planLabel(payment.plan);
-                      const busy = actionId === payment.id;
-                      return (
-                        <tr key={payment.id}>
-                          <td>
-                            <strong>{payment.tenant.name}</strong>
-                            <br />
-                            <span className="page-sub" style={{ fontSize: 12 }}>{payment.tenant.slug}</span>
-                          </td>
-                          <td>
-                            <Pill tone={pl.tone}>{pl.ar}</Pill>
-                          </td>
-                          <td><b>{money(Number(payment.amount))}</b></td>
-                          <td>
-                            <code dir="ltr" style={{ fontSize: 12 }}>{payment.paymentReference ?? '—'}</code>
-                          </td>
-                          <td style={{ fontSize: 13 }}>{formatDate(payment.createdAt)}</td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              <button
-                                className="btn btn--primary"
-                                style={{ fontSize: 12, padding: '4px 12px', gap: 4 }}
-                                onClick={() => handleVerifyPayment(payment)}
-                                disabled={busy}
-                                aria-label={`تأكيد دفعة ${payment.tenant.name}`}
-                              >
-                                <BadgeCheck className="h-3 w-3" />
-                                {busy ? 'جاري...' : 'تأكيد'}
-                              </button>
-                              <button
-                                className="btn btn--danger"
-                                style={{ fontSize: 12, padding: '4px 12px', gap: 4 }}
-                                onClick={() => handleRejectPayment(payment)}
-                                disabled={busy}
-                                aria-label={`رفض دفعة ${payment.tenant.name}`}
-                              >
-                                <Ban className="h-3 w-3" />
-                                رفض
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Audit Log Tab ────────────────────────────────────────────────── */}
-      {activeTab === 'audit' && (
-        <div className="table-wrapper" role="region" aria-label="سجل التدقيق">
-          {auditLoading ? (
-            <div style={{ padding: 32, textAlign: 'center' }}>
-              <span className="page-sub">جاري تحميل سجل التدقيق...</span>
+          {preview.students.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center' }}>
+              <span className="page-sub">{t('superAdmin.viewAs.previewEmpty')}</span>
             </div>
           ) : (
-            <table className="data-table" aria-label="سجل التدقيق">
+            <table className="data-table" aria-label={t('superAdmin.viewAs.previewTitle')}>
               <thead>
                 <tr>
-                  <th scope="col">الإجراء</th>
-                  <th scope="col">المستخدم</th>
-                  <th scope="col">المركز</th>
-                  <th scope="col">الكيان</th>
-                  <th scope="col">المبلغ</th>
-                  <th scope="col">التاريخ</th>
+                  <th scope="col">{t('students.table.code')}</th>
+                  <th scope="col">{t('students.table.name')}</th>
                 </tr>
               </thead>
               <tbody>
-                {auditLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: 32 }}>
-                      <span className="page-sub">لا توجد إدخالات في سجل التدقيق</span>
-                    </td>
+                {preview.students.map((student) => (
+                  <tr key={student.id}>
+                    <td><code style={{ fontSize: 12 }}>{student.studentCode}</code></td>
+                    <td>{student.fullName}</td>
                   </tr>
-                ) : (
-                  auditLogs.map((log) => (
-                    <tr key={log.id}>
-                      <td>
-                        <code style={{ fontSize: 12 }}>{log.action}</code>
-                      </td>
-                      <td>
-                        {log.actor ? (
-                          <>
-                            <span>{log.actor.fullName}</span>
-                            <span className="page-sub" style={{ display: 'block', fontSize: 11 }}>
-                              @{log.actor.username} · {log.actor.role}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="page-sub">—</span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: 13 }}>
-                        {log.actor?.tenant?.name ?? <span className="page-sub">—</span>}
-                      </td>
-                      <td style={{ fontSize: 12 }}>
-                        {log.entityType}
-                        {log.entityId && (
-                          <span className="page-sub" style={{ display: 'block' }}>
-                            {log.entityId.substring(0, 8)}…
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: 13 }}>
-                        {log.amount ? money(Number(log.amount)) : <span className="page-sub">—</span>}
-                      </td>
-                      <td style={{ fontSize: 12 }}>
-                        {new Intl.DateTimeFormat('ar-EG', {
-                          year: 'numeric', month: 'short', day: 'numeric',
-                          hour: '2-digit', minute: '2-digit',
-                        }).format(new Date(log.createdAt))}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           )}
         </div>
       )}
 
-      {/* Extend Trial Modal */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(210px, 250px) 1fr', gap: 20, alignItems: 'start' }}>
+        <nav
+          aria-label={t('superAdmin.shell.navLabel')}
+          className="table-wrapper"
+          style={{ padding: 12, position: 'sticky', top: 16 }}
+        >
+          {SECTION_GROUPS.map((group) => (
+            <div key={group.id} style={{ marginBottom: 12 }}>
+              <strong
+                style={{
+                  display: 'block',
+                  fontSize: 11,
+                  letterSpacing: 0.3,
+                  color: 'var(--color-muted, #64748b)',
+                  padding: '4px 8px',
+                }}
+              >
+                {t(group.labelKey)}
+              </strong>
+              {SECTIONS.filter((section) => section.group === group.id).map((section) => {
+                const Icon = section.icon;
+                const isActive = section.id === activeSection;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => select(section.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      textAlign: 'start',
+                      padding: '7px 8px',
+                      marginBottom: 2,
+                      borderRadius: 8,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      border: isActive ? '1px solid var(--color-primary, #0f766e)' : '1px solid transparent',
+                      background: isActive ? 'var(--color-primary-soft, rgba(15,118,110,0.1))' : 'transparent',
+                      color: 'inherit',
+                      fontWeight: isActive ? 700 : 400,
+                    }}
+                  >
+                    <Icon className="h-3 w-3" aria-hidden="true" />
+                    <span>{t(section.labelKey)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <main style={{ minWidth: 0 }}>
+          {activeSection === 'overview' && <OverviewSection {...sectionProps} onNavigate={select} />}
+          {activeSection === 'centers' && (
+            <CentersSection {...sectionProps} onExtendTrial={setExtendTarget} onViewAs={setViewAsTarget} />
+          )}
+          {activeSection === 'users' && <UsersSection {...sectionProps} />}
+          {activeSection === 'subscriptions' && <SubscriptionsSection {...sectionProps} />}
+          {activeSection === 'plans' && <PlansSection {...sectionProps} />}
+          {activeSection === 'usage' && <UsageSection {...sectionProps} />}
+          {activeSection === 'revenue' && <RevenueSection {...sectionProps} />}
+          {activeSection === 'notifications' && <NotificationsSection {...sectionProps} />}
+          {activeSection === 'featureFlags' && <FeatureFlagsSection {...sectionProps} />}
+          {activeSection === 'health' && <HealthSection {...sectionProps} />}
+          {activeSection === 'audit' && <AuditSection {...sectionProps} />}
+          {activeSection === 'settings' && <SettingsSection {...sectionProps} />}
+          {activeSection === 'data' && <DataSection {...sectionProps} />}
+          {activeSection === 'security' && <SecuritySection {...sectionProps} />}
+          {activeSection === 'support' && <SupportSection {...sectionProps} />}
+          {activeSection === 'account' && <AccountSection {...sectionProps} />}
+        </main>
+      </div>
+
       {extendTarget && (
         <ExtendTrialModal
           tenant={extendTarget}
@@ -678,6 +425,15 @@ export function SuperAdminPage() {
           onClose={() => setExtendTarget(null)}
         />
       )}
+
+      {viewAsTarget && (
+        <ViewAsModal
+          tenant={viewAsTarget}
+          onConfirm={(reason) => handleStartViewAs(viewAsTarget, reason)}
+          onClose={() => setViewAsTarget(null)}
+        />
+      )}
+
     </div>
   );
 }
