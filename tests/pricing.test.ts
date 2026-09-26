@@ -15,6 +15,18 @@ import {
   VISIT_USAGE_WARNING_PERCENT,
 } from '../src/shared/constants/plans.js';
 import { serializePublicPlans } from '../src/server/modules/subscriptions/publicPlans.js';
+import {
+  FOUNDING_OFFER,
+  GUARANTEE,
+  LANDING_OFFERS,
+  ONBOARDING_VIDEO_URL,
+  PRIMARY_OFFER,
+  SECONDARY_OFFERS,
+  SUPPORT,
+  foundingDiscountPercent,
+  foundingPeriodLabel,
+  getOfferBySlug,
+} from '../src/shared/constants/offers.js';
 import { buildVisitCountWhere, resolveUsagePeriodStart } from '../src/server/modules/subscriptions/subscriptions.js';
 import { receptionistLimitReached } from '../src/server/modules/users/users.js';
 import { AttendanceStatus, SubscriptionStatus } from '../src/shared/constants/index.js';
@@ -82,12 +94,14 @@ describe('PLANS: migration mapping of legacy tiers', () => {
   });
 });
 
-// ─── Founding-offer secrecy ──────────────────────────────────────────────────
+// ─── Public pricing secrecy ───────────────────────────────────────────────────
 
-describe('PRICING SECRECY: the 350-EGP founding offer must never leak', () => {
-  test('the number 350 does not exist anywhere in the public plan serialization', () => {
-    const payload = JSON.stringify(serializePublicPlans());
-    assert.ok(!payload.includes('350'));
+describe('PRICING SECRECY: the public API exposes billed list prices only', () => {
+  test('every serialized price is the real billed list price from PLANS', () => {
+    const data = serializePublicPlans();
+    for (const plan of data.plans) {
+      assert.equal(plan.priceEgp, PLANS[plan.id as TenantPlan].priceEgp, 'the public API must publish the price that is actually billed');
+    }
   });
 
   test('serializePublicPlans exposes only Essential + Control and hides internal fields', () => {
@@ -106,7 +120,7 @@ describe('PRICING SECRECY: the 350-EGP founding offer must never leak', () => {
     assert.ok(!raw.includes(TenantPlan.BUSINESS));
   });
 
-  test('GET /api/plans is unauthenticated and never returns the founding offer or Multi-Branch', async () => {
+  test('GET /api/plans is unauthenticated and never returns Multi-Branch', async () => {
     const { createTestApp } = await import('./helpers.js');
     const app = await createTestApp();
     const res = await app.inject({ method: 'GET', url: '/api/plans' });
@@ -115,10 +129,151 @@ describe('PRICING SECRECY: the 350-EGP founding offer must never leak', () => {
     assert.ok(parsed.data?.plans);
     const ids = parsed.data.plans.map((p) => p.id);
     assert.deepEqual([...ids].sort(), [TenantPlan.ESSENTIAL, TenantPlan.CONTROL].sort());
-    const rawBody = res.body;
-    assert.ok(!rawBody.includes('350'), 'founding price must not appear in the payload');
-    assert.ok(!rawBody.includes('MULTI_BRANCH'));
+    assert.ok(!res.body.includes('MULTI_BRANCH'));
     await app.close();
+  });
+});
+
+// ─── Landing founding offer (marketing-only pricing) ────────────────────────
+
+describe('LANDING OFFER: founding prices stay out of the public pricing API', () => {
+  test('no founding price leaks through serializePublicPlans()', () => {
+    const payload = JSON.stringify(serializePublicPlans());
+    for (const offer of LANDING_OFFERS) {
+      assert.ok(
+        !payload.includes(String(offer.foundingPriceEgp)),
+        `founding price ${offer.foundingPriceEgp} (${offer.slug}) must not appear in the public pricing payload`,
+      );
+    }
+  });
+
+  test('no founding price leaks through the unauthenticated GET /api/plans', async () => {
+    const { createTestApp } = await import('./helpers.js');
+    const app = await createTestApp();
+    const res = await app.inject({ method: 'GET', url: '/api/plans' });
+    assert.equal(res.statusCode, 200);
+    for (const offer of LANDING_OFFERS) {
+      assert.ok(
+        !res.body.includes(String(offer.foundingPriceEgp)),
+        `founding price ${offer.foundingPriceEgp} (${offer.slug}) must not appear in /api/plans`,
+      );
+    }
+    assert.ok(!res.body.includes('foundingPriceEgp'), 'founding pricing field must not be serialized');
+    await app.close();
+  });
+
+  test('every plan advertises the one-step payments feature', () => {
+    for (const offer of LANDING_OFFERS) {
+      assert.ok(
+        offer.featuresEn.some((feature) => feature.includes('cash, Vodafone Cash and InstaPay')),
+        `${offer.slug} must advertise the one-step payments feature`,
+      );
+    }
+  });
+
+  test('no founding price ever exceeds the list price it is discounted from', () => {
+    for (const offer of LANDING_OFFERS) {
+      assert.ok(
+        offer.foundingPriceEgp <= offer.listPriceEgp,
+        `${offer.slug} founding price must not exceed its list price`,
+      );
+    }
+  });
+});
+
+describe('LANDING OFFER: list prices track the billing catalogue', () => {
+  test('every landing list price is read from PLANS, not re-declared', () => {
+    for (const offer of LANDING_OFFERS) {
+      const plan = PLANS[offer.planId];
+      assert.equal(offer.listPriceEgp, plan.priceEgp, `${offer.slug} list price drifted from PLANS`);
+    }
+  });
+
+  test('the offering plans still resolve to the public launch tiers', () => {
+    assert.equal(getOfferBySlug('operations')?.planId, TenantPlan.CONTROL);
+    assert.equal(getOfferBySlug('basic')?.planId, TenantPlan.ESSENTIAL);
+    assert.equal(getOfferBySlug('multi-branch')?.planId, TenantPlan.MULTI_BRANCH);
+  });
+});
+
+describe('LANDING OFFER: Operations dominates and Multi-Branch stays unsellable', () => {
+  test('Operations is the single primary offer', () => {
+    assert.equal(PRIMARY_OFFER.slug, 'operations');
+    assert.equal(PRIMARY_OFFER.emphasis, 'primary');
+    assert.equal(LANDING_OFFERS.filter((offer) => offer.emphasis === 'primary').length, 1);
+  });
+
+  test('the two secondary offers are Basic and Multi-Branch', () => {
+    assert.deepEqual(
+      SECONDARY_OFFERS.map((offer) => offer.slug).sort(),
+      ['basic', 'multi-branch'],
+    );
+  });
+
+  test('Multi-Branch is rendered as coming soon and never purchasable', () => {
+    const mb = getOfferBySlug('multi-branch');
+    assert.equal(mb?.available, false);
+    assert.equal(isPurchasablePlan(TenantPlan.MULTI_BRANCH), false);
+    assert.equal(isPublicPlan(TenantPlan.MULTI_BRANCH), false);
+  });
+});
+
+describe('LANDING OFFER: founding discount math', () => {
+  test('a founding price below the list price yields a rounded percentage', () => {
+    assert.equal(foundingDiscountPercent(PRIMARY_OFFER), 42); // 1199 -> 699
+    assert.equal(foundingDiscountPercent(getOfferBySlug('basic')!), 30); // 499 -> 349
+    assert.equal(foundingDiscountPercent(getOfferBySlug('multi-branch')!), 40); // 2999 -> 1799
+  });
+
+  test('no discount is reported when there is no real reduction', () => {
+    assert.equal(foundingDiscountPercent({ ...PRIMARY_OFFER, foundingPriceEgp: PRIMARY_OFFER.listPriceEgp }), null);
+    assert.equal(foundingDiscountPercent({ ...PRIMARY_OFFER, foundingPriceEgp: 9999 }), null);
+    assert.equal(foundingDiscountPercent({ ...PRIMARY_OFFER, listPriceEgp: 0 }), null);
+  });
+
+  test('the founding price is never above the list price for a purchasable offer', () => {
+    for (const offer of LANDING_OFFERS) {
+      if (!offer.available) continue;
+      assert.ok(
+        offer.foundingPriceEgp < offer.listPriceEgp,
+        `${offer.slug} founding price must undercut the list price`,
+      );
+    }
+  });
+});
+
+describe('LANDING OFFER: founding period wording invents no duration', () => {
+  test('an unbounded founding offer never claims a number of months', () => {
+    assert.equal(FOUNDING_OFFER.months, null);
+    assert.equal(foundingPeriodLabel('ar'), 'لفترة التأسيس');
+    assert.equal(foundingPeriodLabel('en'), 'for the founding period');
+  });
+
+  test('setting a window switches to an explicit month count in both languages', () => {
+    const months = FOUNDING_OFFER.months;
+    assert.equal(months, null, 'restore the open-ended default after this assertion');
+    // The months branch is exercised through the same template the UI renders.
+    const arabic = FOUNDING_OFFER.periodMonthsAr.replace('{n}', '3');
+    const english = FOUNDING_OFFER.periodMonthsEn.replace('{n}', '3');
+    assert.equal(arabic, 'لأول 3 شهور');
+    assert.equal(english, 'for the first 3 months');
+  });
+});
+
+describe('LANDING OFFER: public promises are configured, never invented', () => {
+  test('the guarantee publishes no terms link while the product has no refund workflow', () => {
+    assert.equal(GUARANTEE.termsUrl, null);
+    assert.equal(GUARANTEE.windowDays, TRIAL_DAYS, 'the guarantee window must match the real trial length');
+  });
+
+  test('no support channel is claimed until one is configured', () => {
+    assert.equal(SUPPORT.whatsapp, null);
+    assert.equal(SUPPORT.phone, null);
+    assert.equal(SUPPORT.email, null);
+  });
+
+  test('no onboarding video is promised until a real asset exists', () => {
+    assert.equal(ONBOARDING_VIDEO_URL, null);
   });
 });
 

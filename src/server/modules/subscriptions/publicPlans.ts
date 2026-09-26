@@ -6,8 +6,9 @@ import { PUBLIC_PLAN_IDS, PLANS, TRIAL_DAYS } from '../../../shared/constants/pl
  *
  * Security/commercial invariant: this serializer only ever exposes plans in
  * PUBLIC_PLAN_IDS, and never exposes internal fields (visit limits, legacy
- * plan names) or private pricing. In particular the founding-customer price
- * (350 EGP/mo) must never appear here.
+ * plan names) or private pricing. Founding-customer pricing lives in
+ * `constants/offers.ts` for the marketing page and must never appear here —
+ * the prices this endpoint returns are the real billed list prices.
  */
 export function serializePublicPlans() {
   return {

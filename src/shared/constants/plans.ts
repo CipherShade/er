@@ -9,8 +9,10 @@ import { TenantPlan } from './index.js';
  * Legacy plan values (GROWTH/BUSINESS/ENTERPRISE) are retained as aliases so
  * unmigrated rows behave under the new rules; the migration backfills them.
  *
- * Founding-customer pricing (350 EGP/mo) intentionally does NOT exist in code
- * and must never appear in public responses or UI.
+ * Founding-customer pricing is NOT part of this catalogue and must never
+ * change what a customer is billed. It lives in `constants/offers.ts` for the
+ * marketing page only. The prices below are the real, billed list prices —
+ * the public API, signup, and billing all read them from here.
  */
 
 export type PlanLimits = {
